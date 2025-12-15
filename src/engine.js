@@ -134,6 +134,49 @@ export const aggressiveHiringScenario = {
   ],
 }
 
+// A "conservative" scenario with slower, more cautious hiring
+export const conservativeScenario = {
+  ...seedStageScenario,
+  id: 'scenario_conservative',
+  name: 'Conservative Plan',
+  // Same starting cash, but fewer hires spread out more slowly
+  hires: [
+    {
+      id: 'hire_ceo_conservative',
+      title: 'Founder / CEO',
+      annualSalary: 180_000,
+      startMonth: 0,
+    },
+    {
+      id: 'hire_cto_conservative',
+      title: 'Founder / CTO',
+      annualSalary: 180_000,
+      startMonth: 0,
+    },
+    // First engineer comes later
+    {
+      id: 'hire_eng1_conservative',
+      title: 'Senior Software Engineer',
+      annualSalary: 180_000,
+      startMonth: 3,
+    },
+    // Sales hire much later
+    {
+      id: 'hire_ae1_conservative',
+      title: 'Account Executive',
+      annualSalary: 140_000,
+      startMonth: 9,
+    },
+    // Designer comes even later
+    {
+      id: 'hire_designer1_conservative',
+      title: 'Product Designer',
+      annualSalary: 150_000,
+      startMonth: 15,
+    },
+  ],
+}
+
 export function runBurnRate(scenario) {
   const monthly = []
 
