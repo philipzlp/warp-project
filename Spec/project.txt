@@ -1,0 +1,70 @@
+Headcount Scenario Planner:
+Model Y our Startup's Growth
+Background
+Warp is an engineering-driven company building the future of automated back-
+office operations. We're looking for a Growth Engineer who's excited to join our
+early story and help us dominate the market through technical growth
+experiments.
+You'll sit at the critical intersection of engineering, data, and growth strategy—
+shipping high-impact technical projects that directly accelerate our mission to
+eliminate HR operations overhead for startups forever.
+Your Mission
+Build TWO versions of a headcount planning tool that helps founders model their
+team growth and burn rate—one utility-focused for serious planning, one growth-
+hack version that's shareable and viral.
+Overview
+Every founder struggles with the same spreadsheet: modeling headcount growth
+versus cash runway. They copy-paste salary data, manually calculate burn rates,
+and email static screenshots to their board. The math is simple but the tools are
+terrible.
+Competitors like Gusto have calculator suites, but they're generic and boring.
+Party Round's "Burn the Runway" showed that financial tools can be fun and viral.
+We want both: a serious planning tool that converts users AND a viral version that
+spreads organically.
+Part 1: Utility Version (Warp-style)
+Build a professional headcount planner that founders actually use for board
+meetings.
+Core Features
+Headcount Scenario Planner: Model Your Startup's Growth 1
+Drag-and-drop interface to add roles to a timeline (monthly or yearly view)
+Visual representations of team members (engineer, salesperson, designer,
+etc.)
+Pre-populated salary ranges by role and location (use realistic startup data)
+Real-time burn rate calculation as roles are added
+Cash runway impact visualization
+(STRETCH) Compare multiple scenarios side-by-side
+(STRETCH) Export/share functionality for board decks
+Technical Requirements
+Clean, professional interface matching Warp's aesthetic
+Smooth drag-and-drop interactions
+Responsive design that works on tablets (board meeting ready)
+Shareable links that preserve scenarios
+Part 2: Growth Hack Version
+Create a viral, fun version inspired by Party Round's approach.
+Make It Viral
+Playful design with personality (animations, sound effects, easter eggs)
+Shareable social cards with scenario summaries
+"Runway death clock" or other memorable hooks
+(STRETCH) Leaderboard of "most ambitious hiring plans"
+(STRETCH) One-click sharing to Twitter/LinkedIn with engaging copy
+(STRETCH) Embed codes for blogs/newsletters
+Bonus Challenges
+1. AI Suggestions: "Companies like yours typically hire a designer at month 6"
+2. Benchmark Data: Show how your plan compares to similar startups
+Headcount Scenario Planner: Model Your Startup's Growth 2
+3. Integration Hints: "Connect Warp to automate this planning"
+4. Fundraising Mode: Model how much to raise based on hiring plan
+Evaluation Criteria
+Growth Thinking: Do the viral mechanics actually work?
+Product Quality: Is the utility version genuinely useful?
+Technical Execution: Clean code, smooth interactions, performance
+Conversion Design: Clear path from free tool to Warp customer
+Creativity: Novel growth mechanics we haven't considered
+Submission
+Format: GitHub repo with code + 2 working local apps + design notes
+Timeline: 3-5 hours maximum. We respect your time—perfect is the enemy of
+good.
+Note: This is intentionally open-ended. Focus on your strengths. If you're
+stronger at design, make it beautiful. If you're stronger at engineering, make it
+bulletproof. Show us what excellence means to you.
+Headcount Scenario Planner: Model Your Startup's Growth 3

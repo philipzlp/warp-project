@@ -1,0 +1,35 @@
+Overview:
+This projects aims to create a useful tool for founders to understand their headcount growth and cash runway. The tool will include a user-friendly design, useful metrics and visualization tools, and growth and viral techniques. The intention is to create a free tool for founders to recognize the value in Warp's suite of products, beginning a conversion. 
+
+Main Objective:
+The main objective is modeling headcount growth versus cash runway. This will be a helpful tool for founders to present their roadmaps to their boards. The founder will be able to input many parameters, and the intelligent backend will present important information and allow for various "what-if" scenarios. The parameters include number of certain types of employees they'll hire, non-headcount costs, and what-if scenarios.  
+
+Key Features (Why and How?):
+	1. Drag and drop interface (In what-if?)
+		1. Actual
+		2. What if ___
+		3. What if Warp
+	2. Different "types" of employees with various, realistic metrics (salary)
+	3. Cost of employee = 1.3x Base
+	4. Non-Headcount costs (Fixed)
+	5. Pie chart of spendings on headcount vs non-headcount, spending on HR + compliance 
+	6. Pie chart of spending on teams
+	7. Graph of monthly over time versus total cash 
+		a. Low cash = need Warp 
+	8. AI Suggestions
+	9. "What if"
+		a. I get more cash
+		b. I hire these people
+	10. Export graphs to PDF
+	11. Integrate "standard"/advised burn rates for different types of companies 
+	12. Employee option size (use image)
+	13. US Map of spending by state
+	14. Effective cost on HR/Compliance
+		a. "What-if" I use Warp (Cash and time Savings)
+		b. Better graph + graph comparison
+
+How I want this to feel?
+This product should be smooth, intuitive, formal, informative, responsive, and in alignment with Warp's aesthetic. The interface will use drag and drop and the visualizations will be modern and interpretable. 
+
+My Product's Advantage (Product Intelligence):
+The what-if intelligence will allow conditional planning for founders. Modeling potential changes in the company and allowing accurate projection of the future will help the founder make decisions. With AI integration, this model can help inform decision making. Underneath, growth and viral techniques will be used to convert product users into Warp customers. 

@@ -1,0 +1,38 @@
+Approach:
+	1. Build incrementally
+	2. Use robust outline to build, rather than coding features
+	3. Utility first, then viral 
+
+Technical Specs:
+	- One engine, 2 front ends
+	- Continually enhance decision making power/ability of intelligent engine
+    - warp-project/
+        ├── package.json
+        ├── index.html              <-- Entry point
+        ├── src/
+        │   ├── engine/             <-- YOUR "BACKEND" (Pure Logic)
+        │   │   ├── calculations.js <-- RunBurnRate(), EstimateRunway()
+        │   │   └── data.js         <-- Employee types, default salaries
+        │   ├── components/         <-- Shared UI
+        │   │   ├── EmployeeCard.jsx
+        │   │   └── RunwayGraph.jsx
+        │   ├── apps/
+        │   │   ├── utility/        <-- The Professional App
+        │   │   │   └── UtilityDashboard.jsx
+        │   │   └── viral/          <-- The Growth Hack App
+        │   │       └── ViralDashboard.jsx (The "Party" version)
+        │   ├── assets/             <-- Sounds, Viral Images
+        │   └── App.jsx             <-- Router (Choose your mode)
+        └── ...config files
+	
+Order of Implementation:
+	1. Actual: Create employees and calculate burn rate + headcount info 
+		a. Headcount, non-headcount, HR costs
+	2. Drag and drop into months 
+	3. Build graphs
+	4. Build AI suggestions
+	5. Build "what-if"
+	6. Enhance design, intelligence, and features 
+
+Tech Stack: React + Vite + Tailwind CSS
+- Recommended Tech Stack: React + Vite + Tailwind CSSComponentChoiceWhy?FrameworkReact (via Vite)The industry standard for "smooth, intuitive" interfaces4. It handles real-time updates (typing = graph moves) instantly.LanguageJavaScript (not TS)Since you know Python, sticking to looser JavaScript will be faster for you than fighting TypeScript errors during a 3-hour rush.StylingTailwind CSSYou don't write CSS files. You just tell Cursor "Make this a red button," and it writes the classes for you.Drag & Drop@dnd-kit/coreA pre-built library. Building drag-and-drop from scratch in 3 hours is impossible.ChartsRechartsSimple, composable charts that look professional 5 and can be easily "themed" for the viral version.AnimationsFramer MotionCritical for the "Viral" version (Death clock, shaking effects)6.
