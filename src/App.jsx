@@ -1,5 +1,7 @@
 import './App.css'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import jsPDF from 'jspdf'
+import html2canvas from 'html2canvas'
 import {
   seedStageScenario,
   aggressiveHiringScenario,
@@ -9,6 +11,8 @@ import {
   estimateRunway,
 } from './engine'
 import CashRunwayChart from './CashRunwayChart.jsx'
+import RoleSpendingPieChart from './RoleSpendingPieChart.jsx'
+import SpendingCategoryPieChart from './SpendingCategoryPieChart.jsx'
 
 const STORAGE_KEY = 'warp-project-saved-scenarios'
 
@@ -42,7 +46,8 @@ function App() {
     }
   }, [savedScenarios])
 
-  const [customScenario, setCustomScenario] = useState({
+  // Function to create a fresh blank custom scenario
+  const createBlankCustomScenario = () => ({
     ...seedStageScenario,
     id: 'scenario_custom',
     name: 'Custom what-if plan',
@@ -58,6 +63,8 @@ function App() {
       },
     ],
   })
+
+  const [customScenario, setCustomScenario] = useState(createBlankCustomScenario())
 
   let currentScenario = seedStageScenario
   if (selectedView === 'aggressive') {
@@ -145,6 +152,15 @@ function App() {
     setSavedScenarios((prev) => [...prev, snapshot])
     setSelectedView('saved')
     setSelectedSavedId(id)
+    // Reset to blank slate after saving
+    setCustomScenario(createBlankCustomScenario())
+    // Reset expense form as well
+    setCustomExpenseForm({
+      label: '',
+      amount: '',
+      isOneTime: false,
+      month: 0,
+    })
   }
 
   function handleDeleteSavedScenario(scenarioId, event) {
@@ -164,6 +180,161 @@ function App() {
       ...prev,
       hires: prev.hires.filter((hire) => hire.id !== hireId),
     }))
+  }
+
+  // State for custom expense form
+  const [customExpenseForm, setCustomExpenseForm] = useState({
+    label: '',
+    amount: '',
+    isOneTime: false,
+    month: 0,
+  })
+
+  function handleAddCustomExpense() {
+    const amount = Number(customExpenseForm.amount) || 0
+    if (!customExpenseForm.label.trim() || amount <= 0) {
+      alert('Please enter a valid expense name and amount')
+      return
+    }
+
+    const newExpense = {
+      id: `custom_expense_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      label: customExpenseForm.label.trim(),
+      monthlyAmount: amount,
+      startMonth: customExpenseForm.month,
+      isOneTime: customExpenseForm.isOneTime,
+    }
+
+    setCustomScenario((prev) => ({
+      ...prev,
+      nonHeadcountCosts: [...prev.nonHeadcountCosts, newExpense],
+    }))
+
+    // Reset form
+    setCustomExpenseForm({
+      label: '',
+      amount: '',
+      isOneTime: false,
+      month: 0,
+    })
+  }
+
+  function handleDeleteExpense(expenseId) {
+    setCustomScenario((prev) => ({
+      ...prev,
+      nonHeadcountCosts: prev.nonHeadcountCosts.filter((cost) => cost.id !== expenseId),
+    }))
+  }
+
+  // Refs for PDF export
+  const summaryRef = useRef(null)
+  const tableRef = useRef(null)
+  const chartRef = useRef(null)
+  const rolePieChartRef = useRef(null)
+  const categoryPieChartRef = useRef(null)
+
+  async function handleExportToPDF() {
+    try {
+      const pdf = new jsPDF('p', 'mm', 'a4')
+      const pageWidth = pdf.internal.pageSize.getWidth()
+      const pageHeight = pdf.internal.pageSize.getHeight()
+      const margin = 10
+      let yPosition = margin
+
+      // Helper function to add a new page if needed
+      const checkNewPage = (height) => {
+        if (yPosition + height > pageHeight - margin) {
+          pdf.addPage()
+          yPosition = margin
+        }
+      }
+
+      // Add title
+      pdf.setFontSize(18)
+      pdf.text(currentScenario.name, pageWidth / 2, yPosition, { align: 'center' })
+      yPosition += 10
+
+      // Capture and add summary
+      if (summaryRef.current) {
+        const summaryCanvas = await html2canvas(summaryRef.current, {
+          backgroundColor: '#ffffff',
+          scale: 2,
+        })
+        const summaryImg = summaryCanvas.toDataURL('image/png')
+        const imgWidth = pageWidth - 2 * margin
+        const imgHeight = (summaryCanvas.height * imgWidth) / summaryCanvas.width
+        
+        checkNewPage(imgHeight)
+        pdf.addImage(summaryImg, 'PNG', margin, yPosition, imgWidth, imgHeight)
+        yPosition += imgHeight + 5
+      }
+
+      // Capture and add table
+      if (tableRef.current) {
+        const tableCanvas = await html2canvas(tableRef.current, {
+          backgroundColor: '#ffffff',
+          scale: 2,
+        })
+        const tableImg = tableCanvas.toDataURL('image/png')
+        const imgWidth = pageWidth - 2 * margin
+        const imgHeight = (tableCanvas.height * imgWidth) / tableCanvas.width
+        
+        checkNewPage(imgHeight)
+        pdf.addImage(tableImg, 'PNG', margin, yPosition, imgWidth, imgHeight)
+        yPosition += imgHeight + 5
+      }
+
+      // Capture and add cash runway chart
+      if (chartRef.current) {
+        const chartCanvas = await html2canvas(chartRef.current, {
+          backgroundColor: '#ffffff',
+          scale: 2,
+        })
+        const chartImg = chartCanvas.toDataURL('image/png')
+        const imgWidth = pageWidth - 2 * margin
+        const imgHeight = (chartCanvas.height * imgWidth) / chartCanvas.width
+        
+        checkNewPage(imgHeight)
+        pdf.addImage(chartImg, 'PNG', margin, yPosition, imgWidth, imgHeight)
+        yPosition += imgHeight + 5
+      }
+
+      // Capture and add role spending pie chart
+      if (rolePieChartRef.current) {
+        const pieCanvas = await html2canvas(rolePieChartRef.current, {
+          backgroundColor: '#ffffff',
+          scale: 2,
+        })
+        const pieImg = pieCanvas.toDataURL('image/png')
+        const imgWidth = pageWidth - 2 * margin
+        const imgHeight = (pieCanvas.height * imgWidth) / pieCanvas.width
+        
+        checkNewPage(imgHeight)
+        pdf.addImage(pieImg, 'PNG', margin, yPosition, imgWidth, imgHeight)
+        yPosition += imgHeight + 5
+      }
+
+      // Capture and add category pie chart
+      if (categoryPieChartRef.current) {
+        const pieCanvas = await html2canvas(categoryPieChartRef.current, {
+          backgroundColor: '#ffffff',
+          scale: 2,
+        })
+        const pieImg = pieCanvas.toDataURL('image/png')
+        const imgWidth = pageWidth - 2 * margin
+        const imgHeight = (pieCanvas.height * imgWidth) / pieCanvas.width
+        
+        checkNewPage(imgHeight)
+        pdf.addImage(pieImg, 'PNG', margin, yPosition, imgWidth, imgHeight)
+        yPosition += imgHeight + 5
+      }
+
+      // Save the PDF
+      pdf.save(`${currentScenario.name.replace(/\s+/g, '_')}_report.pdf`)
+    } catch (error) {
+      console.error('Error exporting to PDF:', error)
+      alert('Failed to export PDF. Please try again.')
+    }
   }
 
   // Temporary debug output so we can inspect the math in the browser console
@@ -192,13 +363,27 @@ function App() {
           display: 'flex',
           flexDirection: 'column',
           gap: '0.5rem',
+          position: 'sticky',
+          top: 0,
+          height: '100vh',
+          overflowY: 'auto',
         }}
       >
         <h2 style={{ marginBottom: '1rem', fontSize: '1.1rem', fontWeight: 600 }}>
           Scenarios
         </h2>
         <button
-          onClick={() => setSelectedView('custom')}
+          onClick={() => {
+            setSelectedView('custom')
+            setCustomScenario(createBlankCustomScenario())
+            // Reset expense form as well
+            setCustomExpenseForm({
+              label: '',
+              amount: '',
+              isOneTime: false,
+              month: 0,
+            })
+          }}
           style={{
             width: '100%',
             textAlign: 'center',
@@ -380,9 +565,28 @@ function App() {
           padding: '1.5rem 1rem 3rem',
         }}
       >
-        <h1>Headcount & Runway Planner (MVP)</h1>
-        <div className="card">
-          <h2>Summary</h2>
+        <h1 style={{ fontWeight: '400', fontSize: '3rem' }}>
+          Headcount and Runway Planner
+        </h1>
+        <div className="card" ref={summaryRef}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+            <h2 style={{ margin: 0 }}>Summary</h2>
+            <button
+              onClick={handleExportToPDF}
+              style={{
+                padding: '0.5rem 1rem',
+                borderRadius: '6px',
+                border: '1px solid #1a73e8',
+                backgroundColor: '#1a73e8',
+                color: '#fff',
+                fontSize: '0.85rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >
+              Export to PDF
+            </button>
+          </div>
           <p>
             <strong>Scenario:</strong> {currentScenario.name}
           </p>
@@ -426,7 +630,7 @@ function App() {
               textAlign: 'center',
             }}
           >
-            <h3 style={{ marginBottom: '0.5rem' }}>Roles to add</h3>
+            <h3 style={{ marginBottom: '0.5rem' }}>Customize Plan</h3>
             <button
               onClick={handleSaveCurrentScenario}
               style={{
@@ -498,8 +702,128 @@ function App() {
                 />
               </div>
             </div>
+            <hr
+              style={{
+                border: 'none',
+                borderTop: '1px solid #ddd',
+                margin: '0.75rem 0',
+              }}
+            />
+            <h4 style={{ fontSize: '0.9rem', fontWeight: 600, marginBottom: '0.5rem' }}>
+              Add Custom Expense
+            </h4>
+            <div style={{ marginBottom: '0.5rem' }}>
+              <input
+                type="text"
+                placeholder="Expense name (e.g., New Office)"
+                value={customExpenseForm.label}
+                onChange={(e) =>
+                  setCustomExpenseForm((prev) => ({ ...prev, label: e.target.value }))
+                }
+                style={{
+                  width: '100%',
+                  padding: '0.3rem 0.4rem',
+                  borderRadius: '4px',
+                  border: '1px solid #ccc',
+                  fontSize: '0.8rem',
+                  marginBottom: '0.3rem',
+                }}
+              />
+              <input
+                type="number"
+                placeholder="Amount"
+                value={customExpenseForm.amount}
+                onChange={(e) =>
+                  setCustomExpenseForm((prev) => ({ ...prev, amount: e.target.value }))
+                }
+                style={{
+                  width: '100%',
+                  padding: '0.3rem 0.4rem',
+                  borderRadius: '4px',
+                  border: '1px solid #ccc',
+                  fontSize: '0.8rem',
+                  marginBottom: '0.3rem',
+                  textAlign: 'center',
+                }}
+              />
+              <div
+                style={{
+                  display: 'flex',
+                  gap: '0.5rem',
+                  marginBottom: '0.3rem',
+                  fontSize: '0.75rem',
+                }}
+              >
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                  <input
+                    type="radio"
+                    checked={!customExpenseForm.isOneTime}
+                    onChange={() =>
+                      setCustomExpenseForm((prev) => ({ ...prev, isOneTime: false }))
+                    }
+                  />
+                  Monthly
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                  <input
+                    type="radio"
+                    checked={customExpenseForm.isOneTime}
+                    onChange={() =>
+                      setCustomExpenseForm((prev) => ({ ...prev, isOneTime: true }))
+                    }
+                  />
+                  One-time
+                </label>
+              </div>
+              <select
+                value={customExpenseForm.month}
+                onChange={(e) =>
+                  setCustomExpenseForm((prev) => ({
+                    ...prev,
+                    month: Number(e.target.value),
+                  }))
+                }
+                style={{
+                  width: '100%',
+                  padding: '0.3rem 0.4rem',
+                  borderRadius: '4px',
+                  border: '1px solid #ccc',
+                  fontSize: '0.8rem',
+                  marginBottom: '0.3rem',
+                }}
+              >
+                {months.map((m) => (
+                  <option key={m} value={m}>
+                    Month {m + 1}
+                  </option>
+                ))}
+              </select>
+              <button
+                onClick={handleAddCustomExpense}
+                style={{
+                  width: '100%',
+                  padding: '0.4rem 0.5rem',
+                  borderRadius: '4px',
+                  border: '1px solid #1a73e8',
+                  backgroundColor: '#1a73e8',
+                  color: '#fff',
+                  fontSize: '0.8rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                Add Expense
+              </button>
+            </div>
+            <hr
+              style={{
+                border: 'none',
+                borderTop: '1px solid #ddd',
+                margin: '0.75rem 0',
+              }}
+            />
             <p style={{ fontSize: '0.85rem', color: '#555', marginBottom: '0.75rem' }}>
-              Drag a role into a month to add a hire starting that month.
+              Drag and drop to add a new hire
             </p>
             {availableRoles.map((role) => (
               <div
@@ -543,6 +867,20 @@ function App() {
               {months.map((monthIndex) => {
                 const hiresThisMonth = customScenario.hires.filter(
                   (h) => h.startMonth === monthIndex,
+                )
+                // Get expenses for this month (excluding the base non-headcount cost)
+                const expensesThisMonth = customScenario.nonHeadcountCosts.filter(
+                  (cost) => {
+                    if (cost.id === 'custom_non_headcount') return false
+                    // One-time expenses: only show in the exact month
+                    if (cost.isOneTime) {
+                      return cost.startMonth === monthIndex
+                    }
+                    // Recurring expenses: show if within active period
+                    const starts = cost.startMonth <= monthIndex
+                    const ends = cost.endMonth == null || monthIndex <= cost.endMonth
+                    return starts && ends
+                  },
                 )
                 return (
                   <div
@@ -613,6 +951,56 @@ function App() {
                         </button>
                       </div>
                     ))}
+                    {expensesThisMonth.map((expense) => (
+                      <div
+                        key={expense.id}
+                        style={{
+                          fontSize: '0.75rem',
+                          padding: '0.25rem 0.4rem',
+                          borderRadius: '999px',
+                          backgroundColor: '#fff3cd',
+                          marginBottom: '0.25rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          gap: '0.3rem',
+                        }}
+                      >
+                        <span style={{ flex: 1 }}>
+                          {expense.label}
+                          {expense.isOneTime && (
+                            <span style={{ fontSize: '0.65rem', color: '#666' }}> (1x)</span>
+                          )}
+                        </span>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleDeleteExpense(expense.id)
+                          }}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            color: '#666',
+                            cursor: 'pointer',
+                            fontSize: '0.7rem',
+                            padding: '0.1rem 0.3rem',
+                            borderRadius: '4px',
+                            lineHeight: 1,
+                          }}
+                          onMouseEnter={(e) => {
+                            e.target.style.backgroundColor = '#ff4444'
+                            e.target.style.color = '#fff'
+                          }}
+                          onMouseLeave={(e) => {
+                            e.target.style.backgroundColor = 'transparent'
+                            e.target.style.color = '#666'
+                          }}
+                          title="Delete this expense"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
                   </div>
                 )
               })}
@@ -624,7 +1012,7 @@ function App() {
       <p className="read-the-docs">
           All data is pre-configured for a typical seed-stage SaaS plan.
         </p>
-        <div style={{ overflowX: 'auto', marginTop: '1rem' }}>
+        <div style={{ overflowX: 'auto', marginTop: '1rem' }} ref={tableRef}>
           <table
             style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}
           >
@@ -651,39 +1039,59 @@ function App() {
               </tr>
             </thead>
             <tbody>
-              {burnResult.monthly.map((row) => (
-                <tr key={row.monthIndex}>
-                  <td style={{ borderBottom: '1px solid #333', padding: '0.5rem' }}>
-                    {row.monthIndex + 1}
-                  </td>
-                  <td style={{ borderBottom: '1px solid #333', padding: '0.5rem' }}>
-                    {row.activeHires}
-                  </td>
-                  <td style={{ borderBottom: '1px solid #333', padding: '0.5rem' }}>
-                    {currentScenario.currency}{' '}
-                    {Math.round(row.payrollCost).toLocaleString()}
-                  </td>
-                  <td style={{ borderBottom: '1px solid #333', padding: '0.5rem' }}>
-                    {currentScenario.currency}{' '}
-                    {Math.round(row.nonHeadcountCost).toLocaleString()}
-                  </td>
-                  <td style={{ borderBottom: '1px solid #333', padding: '0.5rem' }}>
-                    {currentScenario.currency}{' '}
-                    {Math.round(row.totalCost).toLocaleString()}
-                  </td>
-                  <td style={{ borderBottom: '1px solid #333', padding: '0.5rem' }}>
-                    {currentScenario.currency}{' '}
-                    {Math.round(row.closingCash).toLocaleString()}
-                  </td>
-                </tr>
-              ))}
+              {burnResult.monthly.map((row) => {
+                const isNegative = row.closingCash < 0
+                const cellStyle = {
+                  borderBottom: '1px solid #333',
+                  padding: '0.5rem',
+                  color: isNegative ? '#ef4444' : 'inherit',
+                }
+                return (
+                  <tr key={row.monthIndex}>
+                    <td style={cellStyle}>{row.monthIndex + 1}</td>
+                    <td style={cellStyle}>{row.activeHires}</td>
+                    <td style={cellStyle}>
+                      {currentScenario.currency}{' '}
+                      {Math.round(row.payrollCost).toLocaleString()}
+                    </td>
+                    <td style={cellStyle}>
+                      {currentScenario.currency}{' '}
+                      {Math.round(row.nonHeadcountCost).toLocaleString()}
+                    </td>
+                    <td style={cellStyle}>
+                      {currentScenario.currency}{' '}
+                      {Math.round(row.totalCost).toLocaleString()}
+                    </td>
+                    <td style={cellStyle}>
+                      {currentScenario.currency}{' '}
+                      {Math.round(row.closingCash).toLocaleString()}
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         </div>
-        <CashRunwayChart
-          monthly={burnResult.monthly}
-          currency={seedStageScenario.currency}
-        />
+        <div ref={chartRef}>
+          <CashRunwayChart
+            monthly={burnResult.monthly}
+            currency={seedStageScenario.currency}
+          />
+        </div>
+        <div ref={rolePieChartRef}>
+          <RoleSpendingPieChart
+            scenario={currentScenario}
+            burnResult={burnResult}
+            currency={currentScenario.currency}
+          />
+        </div>
+        <div ref={categoryPieChartRef}>
+          <SpendingCategoryPieChart
+            scenario={currentScenario}
+            burnResult={burnResult}
+            currency={currentScenario.currency}
+          />
+        </div>
       </main>
     </div>
   )

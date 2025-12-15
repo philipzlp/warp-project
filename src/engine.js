@@ -15,6 +15,7 @@
 //   monthlyAmount: number
 //   startMonth: number
 //   endMonth?: number
+//   isOneTime?: boolean  // If true, this cost is applied only in startMonth, not recurring
 // }
 //
 // type ScenarioInput = {
@@ -204,6 +205,11 @@ export function runBurnRate(scenario) {
 
     // Active non-headcount costs
     const activeCosts = scenario.nonHeadcountCosts.filter((cost) => {
+      // For one-time costs, only apply in the exact month
+      if (cost.isOneTime) {
+        return cost.startMonth === monthIndex
+      }
+      // For recurring costs, check if within the active period
       const starts = cost.startMonth <= monthIndex
       const ends = cost.endMonth == null || monthIndex <= cost.endMonth
       return starts && ends

@@ -6,6 +6,7 @@ import {
   Tooltip,
   CartesianGrid,
   ResponsiveContainer,
+  ReferenceLine,
 } from 'recharts'
 
 function CashRunwayChart({ monthly, currency }) {
@@ -54,6 +55,7 @@ function CashRunwayChart({ monthly, currency }) {
             formatter={(value) => formatNumber(value)}
             labelFormatter={(label) => `Month ${label}`}
           />
+          <ReferenceLine y={0} stroke="#ef4444" strokeWidth={1} />
           <Line
             type="monotone"
             dataKey="closingCash"
