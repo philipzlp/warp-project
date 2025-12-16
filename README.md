@@ -1,16 +1,80 @@
-# React + Vite
+# Headcount and Runway Planner
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A React + Vite application for modeling startup headcount growth versus cash runway.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- Drag-and-drop interface to plan hiring scenarios
+- Real-time burn rate calculations
+- Cash runway visualization
+- AI-powered insights using Ollama (local LLM)
+- Export scenarios to PDF
 
-## React Compiler
+## AI Insights (Ollama)
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+This app can generate AI-written **summary**, **risks**, and **suggestions** for headcount planning scenarios using Ollama (a local LLM).
 
-## Expanding the ESLint configuration
+### Setup
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+1. **Install Ollama:**
+   - Download from https://ollama.ai
+   - Install and start Ollama (it runs automatically after installation)
+
+2. **Pull a model:**
+   ```bash
+   ollama pull llama3.2
+   ```
+   (You can use any model: `llama3.2`, `mistral`, `phi3`, etc.)
+
+3. **Install dependencies:**
+   ```bash
+   npm install
+   ```
+
+4. **Run the application:**
+
+   **Option A: Run both frontend and backend together:**
+   ```bash
+   npm run dev:all
+   ```
+
+   **Option B: Run separately (in two terminals):**
+   ```bash
+   # Terminal 1: Backend server
+   npm run dev:server
+
+   # Terminal 2: Frontend
+   npm run dev
+   ```
+
+### How to use
+
+1. Start the backend server (see above)
+2. Start the frontend (or use `npm run dev:all`)
+3. Open the app in your browser
+4. Click **Generate Insights** in the UI
+
+### Architecture
+
+- **Frontend:** React + Vite (calls `/api/review-plan`)
+- **Backend:** Express server (`server.js`) running on port 3000
+- **Proxy:** Vite automatically proxies `/api/*` requests to the backend
+- **AI:** Ollama local LLM (default: `llama3.2`)
+
+### Configuration
+
+You can customize the Ollama setup via environment variables:
+
+```bash
+# In your .env file or environment
+OLLAMA_URL=http://localhost:11434  # Default Ollama URL
+OLLAMA_MODEL=llama3.2               # Model to use
+PORT=3000                            # Backend server port
+```
+
+### Notes
+
+- The backend server must be running for AI insights to work
+- Ollama must be installed and running (`ollama serve`)
+- The model must be pulled before use (`ollama pull <model-name>`)
+- All AI processing happens locally - no API keys or external services needed!

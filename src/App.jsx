@@ -13,8 +13,18 @@ import {
 import CashRunwayChart from './CashRunwayChart.jsx'
 import RoleSpendingPieChart from './RoleSpendingPieChart.jsx'
 import SpendingCategoryPieChart from './SpendingCategoryPieChart.jsx'
+import OptionPoolSuggestion from './OptionPoolSuggestion.jsx'
+import AIInsights from './AIInsights.jsx'
+import { getAISuggestions } from './engine/ai.js'
 
 const STORAGE_KEY = 'warp-project-saved-scenarios'
+
+// ID generator that's safe for React (not called during render)
+let __localIdCounter = 0
+function makeLocalId(prefix) {
+  __localIdCounter += 1
+  return `${prefix}_${__localIdCounter}_${Math.random().toString(36).slice(2, 7)}`
+}
 
 const baseCustomNonHeadcount = seedStageScenario.nonHeadcountCosts.reduce(
   (sum, cost) => sum + cost.monthlyAmount,
@@ -54,6 +64,7 @@ function App() {
     hires: [],
     projectionMonths: 12,
     startingCash: seedStageScenario.startingCash,
+    employeeCostMultiplier: seedStageScenario.employeeCostMultiplier,
     nonHeadcountCosts: [
       {
         id: 'custom_non_headcount',
@@ -62,9 +73,20 @@ function App() {
         startMonth: 0,
       },
     ],
+    aiInsights: null, // No AI insights for new plans
+  })
+  
+  // State for projection months (for custom scenarios)
+  const [projectionMonths, setProjectionMonths] = useState(() => {
+    // Initialize from customScenario if it exists
+    const initial = createBlankCustomScenario()
+    return initial.projectionMonths
   })
 
-  const [customScenario, setCustomScenario] = useState(createBlankCustomScenario())
+  const [customScenario, setCustomScenario] = useState(() => {
+    const scenario = createBlankCustomScenario()
+    return scenario
+  })
 
   let currentScenario = seedStageScenario
   if (selectedView === 'aggressive') {
@@ -82,7 +104,8 @@ function App() {
   const burnResult = runBurnRate(currentScenario)
   const runway = estimateRunway(burnResult)
 
-  const months = Array.from({ length: 12 }, (_, i) => i)
+  // Use dynamic months based on current scenario
+  const months = Array.from({ length: currentScenario.projectionMonths }, (_, i) => i)
 
   function handleRoleDragStart(roleId, event) {
     event.dataTransfer.setData('text/plain', roleId)
@@ -103,7 +126,7 @@ function App() {
       hires: [
         ...prev.hires,
         {
-          id: `${role.id}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+          id: makeLocalId(role.id),
           title: role.title,
           annualSalary: role.annualSalary,
           startMonth: monthIndex,
@@ -134,6 +157,25 @@ function App() {
     }))
   }
 
+  function handleEmployeeCostMultiplierChange(event) {
+    const value = Number(event.target.value) || 1.3
+    setCustomScenario((prev) => ({
+      ...prev,
+      employeeCostMultiplier: value,
+    }))
+  }
+
+  function handleProjectionMonthsChange(event) {
+    const value = Number(event.target.value) || 12
+    const clampedValue = Math.max(6, Math.min(60, value)) // Between 6 and 60 months
+    setProjectionMonths(clampedValue)
+    // Update custom scenario immediately
+    setCustomScenario((prev) => ({
+      ...prev,
+      projectionMonths: clampedValue,
+    }))
+  }
+
   function handleSaveCurrentScenario() {
     const nameInput = window.prompt(
       'Name for this scenario (e.g. With senior exec)',
@@ -142,11 +184,13 @@ function App() {
     const trimmed = nameInput.trim()
     if (!trimmed) return
 
-    const id = `saved_${Date.now()}`
+    const id = makeLocalId('saved')
     const snapshot = {
       ...customScenario,
       id,
       name: trimmed,
+      // Include AI insights if they exist
+      aiInsights: customScenario.aiInsights || null,
     }
 
     setSavedScenarios((prev) => [...prev, snapshot])
@@ -161,6 +205,28 @@ function App() {
       isOneTime: false,
       month: 0,
     })
+  }
+
+  // Handler to save AI insights to the current scenario
+  function handleSaveAIInsights(insights) {
+    if (selectedView === 'custom') {
+      // Save to custom scenario
+      setCustomScenario((prev) => ({
+        ...prev,
+        aiInsights: insights,
+      }))
+    } else if (selectedView === 'saved' && selectedSavedId) {
+      // Update saved scenario in the savedScenarios array
+      setSavedScenarios((prev) =>
+        prev.map((s) =>
+          s.id === selectedSavedId
+            ? { ...s, aiInsights: insights }
+            : s
+        )
+      )
+    }
+    // Note: seed, aggressive, and conservative scenarios are read-only
+    // AI insights can be generated for them but won't persist
   }
 
   function handleDeleteSavedScenario(scenarioId, event) {
@@ -198,7 +264,7 @@ function App() {
     }
 
     const newExpense = {
-      id: `custom_expense_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      id: makeLocalId('custom_expense'),
       label: customExpenseForm.label.trim(),
       monthlyAmount: amount,
       startMonth: customExpenseForm.month,
@@ -232,6 +298,7 @@ function App() {
   const chartRef = useRef(null)
   const rolePieChartRef = useRef(null)
   const categoryPieChartRef = useRef(null)
+  const aiInsightsRef = useRef(null)
 
   async function handleExportToPDF() {
     try {
@@ -329,6 +396,29 @@ function App() {
         yPosition += imgHeight + 5
       }
 
+      // Capture and add AI insights (if available and has content)
+      if (aiInsightsRef.current) {
+        // Check if there's actual content (not just the empty state message)
+        const container = aiInsightsRef.current.querySelector('.ai-insights-container')
+        const hasContent = container && (
+          container.querySelector('div > div') || // Has insights content
+          container.textContent?.includes('Summary') // Has summary section
+        )
+        if (hasContent) {
+          const aiCanvas = await html2canvas(aiInsightsRef.current, {
+            backgroundColor: '#ffffff',
+            scale: 2,
+          })
+          const aiImg = aiCanvas.toDataURL('image/png')
+          const imgWidth = pageWidth - 2 * margin
+          const imgHeight = (aiCanvas.height * imgWidth) / aiCanvas.width
+          
+          checkNewPage(imgHeight)
+          pdf.addImage(aiImg, 'PNG', margin, yPosition, imgWidth, imgHeight)
+          yPosition += imgHeight + 5
+        }
+      }
+
       // Save the PDF
       pdf.save(`${currentScenario.name.replace(/\s+/g, '_')}_report.pdf`)
     } catch (error) {
@@ -375,7 +465,9 @@ function App() {
         <button
           onClick={() => {
             setSelectedView('custom')
-            setCustomScenario(createBlankCustomScenario())
+            const newScenario = createBlankCustomScenario()
+            setCustomScenario(newScenario)
+            setProjectionMonths(newScenario.projectionMonths)
             // Reset expense form as well
             setCustomExpenseForm({
               label: '',
@@ -383,6 +475,8 @@ function App() {
               isOneTime: false,
               month: 0,
             })
+            // Clear any AI insights state when creating new plan
+            setSelectedSavedId(null)
           }}
           style={{
             width: '100%',
@@ -608,6 +702,18 @@ function App() {
         </p>
       </div>
 
+        <div ref={aiInsightsRef}>
+          <AIInsights
+            key={currentScenario.id}
+            scenario={currentScenario}
+            burnResult={burnResult}
+            runway={runway}
+            onGenerate={getAISuggestions}
+            initialInsights={currentScenario.aiInsights || null}
+            onInsightsSaved={handleSaveAIInsights}
+          />
+        </div>
+
         {selectedView === 'custom' && (
         <div
           style={{
@@ -648,6 +754,48 @@ function App() {
             >
               Save this scenario
             </button>
+            <div
+              style={{
+                marginBottom: '0.75rem',
+                padding: '0.75rem',
+                borderRadius: '6px',
+                border: '2px solid #10b981',
+                backgroundColor: '#d1fae5',
+              }}
+            >
+              <label
+                style={{
+                  display: 'block',
+                  marginBottom: '0.3rem',
+                  fontWeight: 600,
+                  fontSize: '0.85rem',
+                  color: '#065f46',
+                }}
+              >
+                Salary multiplier
+              </label>
+              <input
+                type="number"
+                step="0.1"
+                min="1.0"
+                max="3.0"
+                value={customScenario.employeeCostMultiplier}
+                onChange={handleEmployeeCostMultiplierChange}
+                style={{
+                  width: '100%',
+                  padding: '0.4rem 0.5rem',
+                  borderRadius: '4px',
+                  border: '1px solid #10b981',
+                  fontSize: '0.85rem',
+                  textAlign: 'center',
+                  backgroundColor: '#fff',
+                  fontWeight: 600,
+                }}
+              />
+              <div style={{ fontSize: '0.75rem', color: '#047857', marginTop: '0.2rem', textAlign: 'center' }}>
+                Multiplies base salary to account for benefits, taxes, and overhead
+              </div>
+            </div>
             <div style={{ marginBottom: '0.75rem', fontSize: '0.85rem' }}>
               <div style={{ marginBottom: '0.4rem' }}>
                 <label
@@ -673,7 +821,7 @@ function App() {
                   }}
                 />
               </div>
-              <div>
+              <div style={{ marginBottom: '0.4rem' }}>
                 <label
                   style={{
                     display: 'block',
@@ -700,6 +848,35 @@ function App() {
                     textAlign: 'center',
                   }}
                 />
+              </div>
+              <div>
+                <label
+                  style={{
+                    display: 'block',
+                    marginBottom: '0.2rem',
+                    fontWeight: 600,
+                  }}
+                >
+                  Planning period (months)
+                </label>
+                <input
+                  type="number"
+                  min="6"
+                  max="60"
+                  value={projectionMonths}
+                  onChange={handleProjectionMonthsChange}
+                  style={{
+                    width: '80%',
+                    padding: '0.3rem 0.4rem',
+                    borderRadius: '4px',
+                    border: '1px solid #ccc',
+                    fontSize: '0.85rem',
+                    textAlign: 'center',
+                  }}
+                />
+                <div style={{ fontSize: '0.75rem', color: '#666', marginTop: '0.2rem' }}>
+                  {projectionMonths} months ({Math.round(projectionMonths / 12 * 10) / 10} years)
+                </div>
               </div>
             </div>
             <hr
@@ -855,7 +1032,9 @@ function App() {
               padding: '1rem',
             }}
           >
-            <h3 style={{ marginBottom: '0.5rem' }}>12‑month hiring schedule</h3>
+            <h3 style={{ marginBottom: '0.5rem' }}>
+              {currentScenario.projectionMonths}‑month hiring schedule
+            </h3>
             <div
               style={{
                 display: 'flex',
@@ -1075,7 +1254,8 @@ function App() {
         <div ref={chartRef}>
           <CashRunwayChart
             monthly={burnResult.monthly}
-            currency={seedStageScenario.currency}
+            currency={currentScenario.currency}
+            startingCash={currentScenario.startingCash}
           />
         </div>
         <div ref={rolePieChartRef}>
@@ -1092,6 +1272,7 @@ function App() {
             currency={currentScenario.currency}
           />
         </div>
+        <OptionPoolSuggestion />
       </main>
     </div>
   )
