@@ -15,6 +15,7 @@ import RoleSpendingPieChart from './RoleSpendingPieChart.jsx'
 import SpendingCategoryPieChart from './SpendingCategoryPieChart.jsx'
 import OptionPoolSuggestion from './OptionPoolSuggestion.jsx'
 import AIInsights from './AIInsights.jsx'
+import ViralDashboard from './ViralDashboard.jsx'
 import { getAISuggestions } from './engine/ai.js'
 
 const STORAGE_KEY = 'warp-project-saved-scenarios'
@@ -32,7 +33,32 @@ const baseCustomNonHeadcount = seedStageScenario.nonHeadcountCosts.reduce(
 )
 
 function App() {
-  const [selectedView, setSelectedView] = useState('seed') // 'seed' | 'aggressive' | 'conservative' | 'custom' | 'saved'
+  const [mode, setMode] = useState('utility') // 'utility' | 'viral'
+  
+  // Load scenario from URL if present (for shareable links) - check this BEFORE initializing selectedView
+  const loadScenarioFromURL = () => {
+    try {
+      const urlParams = new URLSearchParams(window.location.search)
+      const scenarioData = urlParams.get('scenario')
+      if (scenarioData) {
+        const decoded = decodeURIComponent(scenarioData)
+        const parsed = JSON.parse(decoded)
+        // Validate it has required fields
+        if (parsed && parsed.startingCash !== undefined && parsed.hires && parsed.nonHeadcountCosts) {
+          return parsed
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load scenario from URL:', error)
+    }
+    return null
+  }
+  
+  // Initialize selectedView to 'custom' if we have a URL scenario, otherwise 'seed'
+  const [selectedView, setSelectedView] = useState(() => {
+    const urlScenario = loadScenarioFromURL()
+    return urlScenario ? 'custom' : 'seed'
+  })
   const [savedScenarios, setSavedScenarios] = useState(() => {
     // Load saved scenarios from localStorage on initial mount
     try {
@@ -76,20 +102,42 @@ function App() {
     aiInsights: null, // No AI insights for new plans
   })
   
-  // State for projection months (for custom scenarios)
-  const [projectionMonths, setProjectionMonths] = useState(() => {
-    // Initialize from customScenario if it exists
-    const initial = createBlankCustomScenario()
-    return initial.projectionMonths
-  })
-
   const [customScenario, setCustomScenario] = useState(() => {
+    // Check URL first for shared scenario
+    const urlScenario = loadScenarioFromURL()
+    if (urlScenario) {
+      return urlScenario
+    }
     const scenario = createBlankCustomScenario()
     return scenario
   })
 
+  // State for projection months (for custom scenarios)
+  const [projectionMonths, setProjectionMonths] = useState(() => {
+    // Use projectionMonths from customScenario (which may have been loaded from URL)
+    return customScenario.projectionMonths || 12
+  })
+
+  // Track if we loaded from URL (state so it can be cleared)
+  const [loadedFromURL, setLoadedFromURL] = useState(() => {
+    return loadScenarioFromURL() !== null
+  })
+
+  // Helper to handle view changes and clear URL indicator if needed
+  const handleViewChange = (newView) => {
+    setSelectedView(newView)
+    // Clear the "loaded from URL" indicator when user manually switches views
+    if (loadedFromURL) {
+      setLoadedFromURL(false)
+    }
+  }
+
+  // For viral mode, always use customScenario so it can be modified
+  // For utility mode, use the selected view scenario
   let currentScenario = seedStageScenario
-  if (selectedView === 'aggressive') {
+  if (mode === 'viral') {
+    currentScenario = customScenario
+  } else if (selectedView === 'aggressive') {
     currentScenario = aggressiveHiringScenario
   } else if (selectedView === 'conservative') {
     currentScenario = conservativeScenario
@@ -176,6 +224,36 @@ function App() {
     }))
   }
 
+  // Generate shareable link for current scenario (works with any scenario type)
+  function generateShareableLink(scenario) {
+    // Create a clean scenario object (remove internal IDs that might cause issues)
+    const shareableScenario = {
+      ...scenario,
+      id: 'shared', // Override ID
+      name: scenario.name || 'Shared Scenario',
+    }
+    
+    // Encode scenario as JSON and add to URL
+    const scenarioJson = JSON.stringify(shareableScenario)
+    const encoded = encodeURIComponent(scenarioJson)
+    const shareUrl = `${window.location.origin}${window.location.pathname}?scenario=${encoded}`
+    
+    return shareUrl
+  }
+
+  function handleShareScenario() {
+    // Use currentScenario (the one currently displayed) instead of customScenario
+    const shareUrl = generateShareableLink(currentScenario)
+    
+    // Copy to clipboard
+    navigator.clipboard.writeText(shareUrl).then(() => {
+      alert('✅ Shareable link copied to clipboard! Share this URL with others.')
+    }).catch(() => {
+      // Fallback: show in prompt if clipboard API fails
+      window.prompt('Copy this link to share your scenario:', shareUrl)
+    })
+  }
+
   function handleSaveCurrentScenario() {
     const nameInput = window.prompt(
       'Name for this scenario (e.g. With senior exec)',
@@ -194,7 +272,7 @@ function App() {
     }
 
     setSavedScenarios((prev) => [...prev, snapshot])
-    setSelectedView('saved')
+    handleViewChange('saved')
     setSelectedSavedId(id)
     // Reset to blank slate after saving
     setCustomScenario(createBlankCustomScenario())
@@ -235,7 +313,7 @@ function App() {
       setSavedScenarios((prev) => prev.filter((s) => s.id !== scenarioId))
       // If the deleted scenario was selected, switch back to seed view
       if (selectedView === 'saved' && selectedSavedId === scenarioId) {
-        setSelectedView('seed')
+        handleViewChange('seed')
         setSelectedSavedId(null)
       }
     }
@@ -464,7 +542,7 @@ function App() {
         </h2>
         <button
           onClick={() => {
-            setSelectedView('custom')
+            handleViewChange('custom')
             const newScenario = createBlankCustomScenario()
             setCustomScenario(newScenario)
             setProjectionMonths(newScenario.projectionMonths)
@@ -514,7 +592,7 @@ function App() {
           Suggested Schedules
         </h3>
         <button
-          onClick={() => setSelectedView('seed')}
+          onClick={() => handleViewChange('seed')}
           style={{
             width: '100%',
             textAlign: 'left',
@@ -532,7 +610,7 @@ function App() {
           Seed plan
         </button>
         <button
-          onClick={() => setSelectedView('aggressive')}
+          onClick={() => handleViewChange('aggressive')}
           style={{
             width: '100%',
             textAlign: 'left',
@@ -550,7 +628,7 @@ function App() {
           Aggressive plan
         </button>
         <button
-          onClick={() => setSelectedView('conservative')}
+          onClick={() => handleViewChange('conservative')}
           style={{
             width: '100%',
             textAlign: 'left',
@@ -590,7 +668,7 @@ function App() {
               <button
                 key={scenario.id}
                 onClick={() => {
-                  setSelectedView('saved')
+                  handleViewChange('saved')
                   setSelectedSavedId(scenario.id)
                 }}
                 style={{
@@ -659,28 +737,157 @@ function App() {
           padding: '1.5rem 1rem 3rem',
         }}
       >
-        <h1 style={{ fontWeight: '400', fontSize: '3rem' }}>
-          Headcount and Runway Planner
-        </h1>
-        <div className="card" ref={summaryRef}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-            <h2 style={{ margin: 0 }}>Summary</h2>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+          <h1 style={{ fontWeight: '400', fontSize: '3rem', margin: 0 }}>
+            Headcount and Runway Planner
+          </h1>
+          <div
+            style={{
+              display: 'flex',
+              gap: '0.5rem',
+              alignItems: 'center',
+              padding: '0.5rem',
+              backgroundColor: '#f3f4f6',
+              borderRadius: '8px',
+            }}
+          >
             <button
-              onClick={handleExportToPDF}
+              onClick={() => setMode('utility')}
               style={{
                 padding: '0.5rem 1rem',
                 borderRadius: '6px',
-                border: '1px solid #1a73e8',
-                backgroundColor: '#1a73e8',
-                color: '#fff',
-                fontSize: '0.85rem',
+                border: 'none',
+                backgroundColor: mode === 'utility' ? '#1a73e8' : 'transparent',
+                color: mode === 'utility' ? '#fff' : '#6b7280',
+                fontSize: '0.9rem',
                 fontWeight: 600,
                 cursor: 'pointer',
+                transition: 'all 0.2s',
               }}
             >
-              Export to PDF
+              Utility Mode
+            </button>
+            <button
+              onClick={() => setMode('viral')}
+              style={{
+                padding: '0.5rem 1rem',
+                borderRadius: '6px',
+                border: 'none',
+                backgroundColor: mode === 'viral' ? '#ec4899' : 'transparent',
+                color: mode === 'viral' ? '#fff' : '#6b7280',
+                fontSize: '0.9rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+              }}
+            >
+              🚀 Viral Mode
             </button>
           </div>
+        </div>
+        <div
+          style={{
+            position: 'sticky',
+            top: 0,
+            zIndex: 100,
+            marginTop: '1rem',
+            marginBottom: '2rem',
+            padding: '1rem 0',
+            textAlign: 'center',
+            borderTop: '2px solid #ec4899',
+            borderBottom: '2px solid #ec4899',
+            backgroundColor: '#ffffff',
+            width: '100%',
+          }}
+        >
+          <a
+            href="https://www.joinwarp.com/integrations"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              color: '#ec4899',
+              fontSize: '1rem',
+              fontWeight: 600,
+              textDecoration: 'none',
+              display: 'inline-block',
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.textDecoration = 'underline'
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.textDecoration = 'none'
+            }}
+          >
+            Streamline your payroll and compliance with Warp →
+          </a>
+        </div>
+
+        {/* Conditional Rendering: Utility vs Viral Mode */}
+        {mode === 'viral' ? (
+          <ViralDashboard
+            currentScenario={customScenario}
+            burnResult={burnResult}
+            runway={runway}
+            onScenarioChange={(updatedScenario) => {
+              setCustomScenario(updatedScenario)
+              // Ensure we're in custom view when modifying in viral mode
+              if (selectedView !== 'custom') {
+                handleViewChange('custom')
+              }
+            }}
+            onGenerateAI={getAISuggestions}
+          />
+        ) : (
+          <>
+        <div className="card" ref={summaryRef}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+            <h2 style={{ margin: 0 }}>Summary</h2>
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <button
+                onClick={handleShareScenario}
+                style={{
+                  padding: '0.5rem 1rem',
+                  borderRadius: '6px',
+                  border: '1px solid #10b981',
+                  backgroundColor: '#10b981',
+                  color: '#fff',
+                  fontSize: '0.85rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                🔗 Share Link
+              </button>
+              <button
+                onClick={handleExportToPDF}
+                style={{
+                  padding: '0.5rem 1rem',
+                  borderRadius: '6px',
+                  border: '1px solid #1a73e8',
+                  backgroundColor: '#1a73e8',
+                  color: '#fff',
+                  fontSize: '0.85rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                Export to PDF
+              </button>
+            </div>
+          </div>
+          {loadedFromURL && (
+            <div style={{
+              padding: '0.75rem',
+              marginBottom: '0.75rem',
+              backgroundColor: '#d1fae5',
+              borderRadius: '6px',
+              border: '1px solid #10b981',
+              fontSize: '0.9rem',
+              color: '#065f46',
+            }}>
+              ✅ Loaded from shared link
+            </div>
+          )}
           <p>
             <strong>Scenario:</strong> {currentScenario.name}
           </p>
@@ -1273,6 +1480,8 @@ function App() {
           />
         </div>
         <OptionPoolSuggestion />
+          </>
+        )}
       </main>
     </div>
   )

@@ -184,7 +184,7 @@ function SpendingCategoryPieChart({ scenario, burnResult, currency }) {
               cursor: 'pointer',
             }}
           />
-          <span>Show savings with Warp</span>
+          <span>Show the value of saving with Warp</span>
         </label>
       </div>
       <div style={{ width: '100%', height: 400 }}>

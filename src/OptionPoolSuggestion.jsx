@@ -50,7 +50,7 @@ function OptionPoolSuggestion() {
       <div
         style={{
           backgroundColor: '#ffffff',
-          border: '2px solid #fbbf24',
+          border: '2px solid #000000',
           borderRadius: '12px',
           padding: '2rem',
           boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
@@ -127,14 +127,14 @@ function OptionPoolSuggestion() {
               backgroundColor: '#fff',
               borderRadius: '8px',
               padding: '1.5rem',
-              border: '1px solid #fbbf24',
+              border: '1px solid #000000',
             }}
           >
             <div
               style={{
                 marginBottom: '1rem',
                 paddingBottom: '1rem',
-                borderBottom: '2px solid #fef3c7',
+                borderBottom: '2px solid #000000',
               }}
             >
               <h3
@@ -289,7 +289,7 @@ function OptionPoolSuggestion() {
                 padding: '1rem',
                 backgroundColor: '#ffffff',
                 borderRadius: '6px',
-                border: '1px solid #fbbf24',
+                border: '1px solid #000000',
               }}
             >
               <p
@@ -315,7 +315,7 @@ function OptionPoolSuggestion() {
               padding: '1rem',
               backgroundColor: '#ffffff',
               borderRadius: '8px',
-              border: '1px solid #fbbf24',
+              border: '1px solid #000000',
             }}
           >
             <p
