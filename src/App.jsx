@@ -392,6 +392,10 @@ function App() {
   const rolePieChartRef = useRef(null)
   const categoryPieChartRef = useRef(null)
   const aiInsightsRef = useRef(null)
+  const optionPoolRef = useRef(null)
+  
+  // State for option pool PDF inclusion toggle
+  const [includeOptionPoolInPDF, setIncludeOptionPoolInPDF] = useState(false)
 
   async function handleExportToPDF() {
     try {
@@ -580,6 +584,21 @@ function App() {
         yPosition += imgHeight + 5
       }
 
+      // Capture and add option pool section if toggle is enabled
+      if (includeOptionPoolInPDF && optionPoolRef.current) {
+        const optionPoolCanvas = await html2canvas(optionPoolRef.current, {
+          backgroundColor: '#ffffff',
+          scale: 2,
+        })
+        const optionPoolImg = optionPoolCanvas.toDataURL('image/png')
+        const imgWidth = pageWidth - 2 * margin
+        const imgHeight = (optionPoolCanvas.height * imgWidth) / optionPoolCanvas.width
+        
+        checkNewPage(imgHeight)
+        pdf.addImage(optionPoolImg, 'PNG', margin, yPosition, imgWidth, imgHeight)
+        yPosition += imgHeight + 5
+      }
+
       // Save the PDF
       pdf.save(`${currentScenario.name.replace(/\s+/g, '_')}_report.pdf`)
     } catch (error) {
@@ -627,17 +646,19 @@ function App() {
           textAlign: 'center',
         }}>
           <div style={{
-            fontSize: '3rem',
+            fontSize: '2rem',
             fontWeight: 700,
             fontFamily: 'Arial, sans-serif',
-            lineHeight: 1,
+            lineHeight: 1.2,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: '0.1em',
+            gap: '0.05em',
+            flexWrap: 'wrap',
           }}>
+            <span style={{ color: '#ffffff' }}>Auto</span>
             <span style={{ color: '#ffffff' }}>V</span>
-            <span style={{ color: '#000000', backgroundColor: '#ffffff', padding: '0 0.1em' }}>U</span>
+            <span style={{ color: '#000000', backgroundColor: '#ffffff', padding: '0 0.1em' }}>u</span>
           </div>
         </div>
         <h2 style={{ marginBottom: '1rem', fontSize: '1.1rem', fontWeight: 600 }}>
@@ -1823,7 +1844,41 @@ function App() {
             />
           </div>
         </div>
-        <OptionPoolSuggestion />
+        <div ref={optionPoolRef}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: '1rem',
+            padding: '0 2rem',
+          }}>
+            <div style={{ flex: 1 }}></div>
+            <label
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                cursor: 'pointer',
+                fontSize: '0.9rem',
+                fontWeight: 500,
+                color: '#374151',
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={includeOptionPoolInPDF}
+                onChange={(e) => setIncludeOptionPoolInPDF(e.target.checked)}
+                style={{
+                  width: '18px',
+                  height: '18px',
+                  cursor: 'pointer',
+                }}
+              />
+              <span>Include option pool in PDF report</span>
+            </label>
+          </div>
+          <OptionPoolSuggestion />
+        </div>
           </>
         )}
       </main>
