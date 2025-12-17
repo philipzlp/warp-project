@@ -45,3 +45,42 @@ export async function getAISuggestions(scenario, burnResult, runway) {
     throw error
   }
 }
+
+/**
+ * Predicts whether a startup will "take off" or "crash"
+ * 
+ * @param {string} companySummary - Brief company description (max 100 chars)
+ * @param {Object} scenario - The scenario object
+ * @param {Object} burnResult - The burn rate calculation result
+ * @param {Object} runway - The runway estimation result
+ * @returns {Promise<Object>} Object with prediction, confidence, and reasoning
+ */
+export async function predictOutcome(companySummary, scenario, burnResult, runway) {
+  try {
+    const response = await fetch('/api/predict-outcome', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        companySummary,
+        scenario,
+        burnResult,
+        runway,
+      }),
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(
+        errorData.error || `Server returned ${response.status}: ${response.statusText}`
+      )
+    }
+
+    const data = await response.json()
+    return data
+  } catch (error) {
+    console.error('Error fetching outcome prediction:', error)
+    throw error
+  }
+}

@@ -45,20 +45,23 @@ export default function AIInsights({ scenario, burnResult, runway, onGenerate, i
   return (
     <div className="ai-insights-container" style={{
       marginTop: '2rem',
+      maxWidth: '720px',
+      margin: '0.75rem auto 2rem',
       padding: '1.5rem',
       backgroundColor: '#1a1a1a',
       borderRadius: '8px',
       border: '1px solid #333',
     }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-        <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '600' }}>
-          🤖 AI Insights (Ollama)
-        </h2>
+      <h2 style={{ margin: '0 0 1rem 0', textAlign: 'center', fontSize: '1.25rem', fontWeight: '600', color: '#fff' }}>
+        AI Insights
+      </h2>
+      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
         <button
           onClick={handleGenerate}
           disabled={loading}
           style={{
-            padding: '0.5rem 1rem',
+            width: '90%',
+            padding: '0.75rem 1rem',
             backgroundColor: loading ? '#444' : '#6366f1',
             color: 'white',
             border: 'none',
@@ -133,75 +136,6 @@ export default function AIInsights({ scenario, burnResult, runway, onGenerate, i
             </p>
           </div>
 
-          {insights.risks && insights.risks.length > 0 && (
-            <div style={{ marginBottom: '1.5rem' }}>
-              <h3 style={{ 
-                fontSize: '1rem', 
-                fontWeight: '600', 
-                marginBottom: '0.75rem',
-                color: '#fca5a5',
-              }}>
-                Risks to Watch
-              </h3>
-              <ul style={{ 
-                listStyle: 'none', 
-                padding: 0, 
-                margin: 0,
-              }}>
-                {insights.risks.map((risk, index) => (
-                  <li 
-                    key={index}
-                    style={{
-                      padding: '0.75rem',
-                      marginBottom: '0.5rem',
-                      backgroundColor: '#2a1f1f',
-                      borderRadius: '6px',
-                      borderLeft: '3px solid #ef4444',
-                      color: '#fca5a5',
-                      lineHeight: '1.5',
-                    }}
-                  >
-                    {risk}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {insights.suggestions && insights.suggestions.length > 0 && (
-            <div>
-              <h3 style={{ 
-                fontSize: '1rem', 
-                fontWeight: '600', 
-                marginBottom: '0.75rem',
-                color: '#a5b4fc',
-              }}>
-                Suggestions
-              </h3>
-              <ul style={{ 
-                listStyle: 'none', 
-                padding: 0, 
-                margin: 0,
-              }}>
-                {insights.suggestions.map((suggestion, index) => (
-                  <li 
-                    key={index}
-                    style={{
-                      padding: '0.75rem',
-                      marginBottom: '0.5rem',
-                      backgroundColor: '#252525',
-                      borderRadius: '6px',
-                      borderLeft: '3px solid #6366f1',
-                      color: '#e5e7eb',
-                      lineHeight: '1.5',
-                    }}
-                  >
-                    {suggestion}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
         </div>
       )}
 
@@ -210,6 +144,8 @@ export default function AIInsights({ scenario, burnResult, runway, onGenerate, i
           color: '#9ca3af', 
           fontSize: '0.9rem',
           fontStyle: 'italic',
+          textAlign: 'center',
+          margin: 0,
         }}>
           Click "Generate Insights" to get AI-powered analysis and suggestions for your hiring plan using Ollama (local LLM).
         </p>

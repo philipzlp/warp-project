@@ -152,41 +152,9 @@ function SpendingCategoryPieChart({ scenario, burnResult, currency }) {
         marginBottom: '2rem',
       }}
     >
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          gap: '1rem',
-          marginBottom: '1rem',
-        }}
-      >
-        <h2 style={{ margin: 0, textAlign: 'center' }}>
-          Spending by Category
-        </h2>
-        <label
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            cursor: 'pointer',
-            fontSize: '0.9rem',
-            fontWeight: 500,
-          }}
-        >
-          <input
-            type="checkbox"
-            checked={showWarpSavings}
-            onChange={(e) => setShowWarpSavings(e.target.checked)}
-            style={{
-              width: '18px',
-              height: '18px',
-              cursor: 'pointer',
-            }}
-          />
-          <span>Show the value of saving with Warp</span>
-        </label>
-      </div>
+      <h2 style={{ marginBottom: '1rem', textAlign: 'center', fontWeight: 700, fontSize: '1.25rem' }}>
+        Spending by Category
+      </h2>
       <div style={{ width: '100%', height: 400 }}>
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
@@ -222,6 +190,30 @@ function SpendingCategoryPieChart({ scenario, burnResult, currency }) {
             />
           </PieChart>
         </ResponsiveContainer>
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'center', marginTop: '1rem' }}>
+        <label
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            cursor: 'pointer',
+            fontSize: '0.9rem',
+            fontWeight: 500,
+          }}
+        >
+          <input
+            type="checkbox"
+            checked={showWarpSavings}
+            onChange={(e) => setShowWarpSavings(e.target.checked)}
+            style={{
+              width: '18px',
+              height: '18px',
+              cursor: 'pointer',
+            }}
+          />
+          <span>Show the value of saving with Warp</span>
+        </label>
       </div>
     </div>
   )

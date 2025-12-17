@@ -78,3 +78,37 @@ PORT=3000                            # Backend server port
 - Ollama must be installed and running (`ollama serve`)
 - The model must be pulled before use (`ollama pull <model-name>`)
 - All AI processing happens locally - no API keys or external services needed!
+
+## Viral Mode - Take Off or Crash Prediction
+
+In **Viral Mode**, you can get an AI-powered prediction on whether your startup will "take off" or "crash":
+
+### How to Use
+
+1. **Switch to Viral Mode**: Click the "🚀 Viral Mode" button in the top right
+
+2. **Enter Company Summary**: 
+   - Type a brief description of your company (max 100 characters)
+   - Example: "AI-powered SaaS platform for small businesses"
+   - The character counter will show you how many characters you've used
+
+3. **Set Up Your Financial Plan**:
+   - Enter your starting cash amount
+   - Add hires and expenses using the drag-and-drop interface
+   - Configure your projection period (6-60 months)
+
+4. **Get Prediction**: 
+   - Click the "🔮 Predict Outcome" button
+   - The AI will analyze your company summary and financial situation
+   - You'll receive:
+     - **Prediction**: TAKE OFF 🚀 or CRASH 💥
+     - **Confidence Level**: HIGH, MEDIUM, or LOW
+     - **Reasoning**: A brief explanation of the prediction
+
+### Requirements
+
+- Backend server must be running (`npm run dev:server`)
+- Ollama must be installed and running (`ollama serve`)
+- Model must be pulled (`ollama pull llama3.2`)
+
+The prediction feature uses the same Ollama setup as the AI insights feature.

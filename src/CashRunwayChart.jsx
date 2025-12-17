@@ -47,11 +47,11 @@ function CashRunwayChart({ monthly, currency, startingCash, showSpendAllLine: sh
         width: '100%',
         padding: '0 2rem',
         marginTop: '2rem',
-        height: 320, // fixed height; width is responsive
+        height: 400, // Increased height for better spacing
       }}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-        <h2 style={{ margin: 0 }}>Cash balance over time</h2>
+        <h2 style={{ margin: 0, color: '#000000' }}>Cash balance over time</h2>
         <label
           style={{
             display: 'flex',
@@ -60,6 +60,7 @@ function CashRunwayChart({ monthly, currency, startingCash, showSpendAllLine: sh
             cursor: 'pointer',
             fontSize: '0.9rem',
             userSelect: 'none',
+            color: '#000000',
           }}
         >
           <input
@@ -68,30 +69,24 @@ function CashRunwayChart({ monthly, currency, startingCash, showSpendAllLine: sh
             onChange={(e) => setShowSpendAllLine(e.target.checked)}
             style={{ cursor: 'pointer' }}
           />
-          <span>Show "12-Month Steady Spending For Reference" line</span>
+          <span>  For Reference: 12-Month Steady Spending line</span>
         </label>
       </div>
       <ResponsiveContainer width="100%" height="100%">
         <LineChart
           data={chartData}
-          margin={{ top: 20, right: 20, left: 10, bottom: 30 }}
+          margin={{ top: 20, right: 20, left: 20, bottom: 20 }}
         >
           <CartesianGrid stroke="#e0e0e0" />
           <XAxis
             dataKey="month"
             tickLine={false}
-            label={{ value: 'Month', position: 'insideBottom', offset: -5 }}
+            label={{ value: 'Month', position: 'insideBottom', offset: -15 }}
           />
           <YAxis
             tickLine={false}
             tickFormatter={formatNumber}
             width={80}
-            label={{
-              value: 'Cash',
-              angle: -90,
-              position: 'insideLeft',
-              offset: 10,
-            }}
           />
           <Tooltip
             formatter={(value, name) => {
@@ -99,7 +94,7 @@ function CashRunwayChart({ monthly, currency, startingCash, showSpendAllLine: sh
               if (name === 'spendAllCash') {
                 return [formatNumber(value), 'Spend all cash by month 12']
               }
-              return [formatNumber(value), 'Closing cash']
+              return [formatNumber(value), 'Remaining money']
             }}
             labelFormatter={(label) => `Month ${label}`}
           />
@@ -107,10 +102,10 @@ function CashRunwayChart({ monthly, currency, startingCash, showSpendAllLine: sh
           <Line
             type="monotone"
             dataKey="closingCash"
-            stroke="#2563eb"
+            stroke="#ec4899"
             strokeWidth={3}
             dot={false}
-            name="Closing cash"
+            name="Remaining money"
           />
           {showSpendAllLine && (
             <Line
@@ -123,7 +118,6 @@ function CashRunwayChart({ monthly, currency, startingCash, showSpendAllLine: sh
               name="Spend all cash by month 12"
             />
           )}
-          <Legend />
         </LineChart>
       </ResponsiveContainer>
     </div>

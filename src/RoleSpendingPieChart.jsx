@@ -130,7 +130,7 @@ function RoleSpendingPieChart({ scenario, burnResult, currency }) {
         marginBottom: '2rem',
       }}
     >
-      <h2 style={{ marginBottom: '1rem', textAlign: 'center' }}>
+      <h2 style={{ marginBottom: '1rem', textAlign: 'center', fontWeight: 700, fontSize: '1.25rem' }}>
         Spending by Role
       </h2>
       <div style={{ width: '100%', height: 400 }}>
