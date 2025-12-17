@@ -755,8 +755,8 @@ Respond with ONLY a JSON object in this exact format (no backticks, no extra tex
 // Start server
 app.listen(PORT, () => {
   console.log(`Backend server running on http://localhost:${PORT}`)
-  console.log(`🤖 Ollama URL: ${OLLAMA_URL}`)
-  console.log(`📦 Ollama Model: ${OLLAMA_MODEL}`)
-  console.log(`\n💡 Make sure Ollama is running: ollama serve`)
-  console.log(`💡 Pull a model if needed: ollama pull ${OLLAMA_MODEL}`)
+  console.log(`Ollama URL: ${OLLAMA_URL}`)
+  console.log(`Ollama Model: ${OLLAMA_MODEL}`)
+  console.log(`\n Make sure Ollama is running: ollama serve`)
+  console.log(`Pull a model if needed: ollama pull ${OLLAMA_MODEL}`)
 })
