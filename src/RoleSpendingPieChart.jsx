@@ -22,30 +22,31 @@ const COLORS = [
 ]
 
 function RoleSpendingPieChart({ scenario, burnResult, currency }) {
-  if (!scenario || !burnResult || !scenario.hires || scenario.hires.length === 0) {
-    return null
-  }
-
   // Calculate total spending per role
   const roleSpending = {}
-  const projectionMonths = scenario.projectionMonths || 12
-  const multiplier = scenario.employeeCostMultiplier || 1.3
+  let hasData = false
+  
+  if (scenario && scenario.hires && scenario.hires.length > 0) {
+    hasData = true
+    const projectionMonths = scenario.projectionMonths || 12
+    const multiplier = scenario.employeeCostMultiplier || 1.3
 
-  scenario.hires.forEach((hire) => {
-    const startMonth = hire.startMonth || 0
-    const endMonth = hire.endMonth != null ? hire.endMonth : projectionMonths - 1
-    const activeMonths = Math.max(0, Math.min(endMonth, projectionMonths - 1) - startMonth + 1)
-    
-    const monthlyCost = (hire.annualSalary / 12) * multiplier
-    const totalCost = monthlyCost * activeMonths
+    scenario.hires.forEach((hire) => {
+      const startMonth = hire.startMonth || 0
+      const endMonth = hire.endMonth != null ? hire.endMonth : projectionMonths - 1
+      const activeMonths = Math.max(0, Math.min(endMonth, projectionMonths - 1) - startMonth + 1)
+      
+      const monthlyCost = (hire.annualSalary / 12) * multiplier
+      const totalCost = monthlyCost * activeMonths
 
-    const roleTitle = hire.title
-    if (roleSpending[roleTitle]) {
-      roleSpending[roleTitle] += totalCost
-    } else {
-      roleSpending[roleTitle] = totalCost
-    }
-  })
+      const roleTitle = hire.title
+      if (roleSpending[roleTitle]) {
+        roleSpending[roleTitle] += totalCost
+      } else {
+        roleSpending[roleTitle] = totalCost
+      }
+    })
+  }
 
   // Convert to array format for the pie chart
   const data = Object.entries(roleSpending)
@@ -55,11 +56,12 @@ function RoleSpendingPieChart({ scenario, burnResult, currency }) {
     }))
     .sort((a, b) => b.value - a.value) // Sort by value descending
 
-  if (data.length === 0) return null
+  // If no data, use empty data to show empty circle
+  const chartData = data.length === 0 ? [{ name: 'No data yet', value: 100 }] : data
 
   const formatCurrency = (value) => `${currency} ${Number(value).toLocaleString()}`
 
-  const totalSpending = data.reduce((sum, item) => sum + item.value, 0)
+  const totalSpending = hasData ? data.reduce((sum, item) => sum + item.value, 0) : 0
 
   const CustomTooltip = ({ active, payload }) => {
     if (active && payload && payload.length) {
@@ -137,14 +139,14 @@ function RoleSpendingPieChart({ scenario, burnResult, currency }) {
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
-              data={data}
+              data={chartData}
               cx="60%"
               cy="50%"
               labelLine={false}
-              label={({ percent }) => {
+              label={hasData ? ({ percent }) => {
                 const percentage = (percent * 100).toFixed(0)
                 return percentage + '%'
-              }}
+              } : false}
               labelStyle={{
                 fill: '#fff',
                 fontSize: '14px',
@@ -155,20 +157,22 @@ function RoleSpendingPieChart({ scenario, burnResult, currency }) {
               fill="#8884d8"
               dataKey="value"
             >
-              {data.map((entry, index) => (
+              {chartData.map((entry, index) => (
                 <Cell
                   key={`cell-${index}`}
-                  fill={COLORS[index % COLORS.length]}
+                  fill={hasData ? COLORS[index % COLORS.length] : '#e5e7eb'}
                 />
               ))}
             </Pie>
-            <Tooltip content={<CustomTooltip />} />
-            <Legend
-              content={<CustomLegend />}
-              verticalAlign="middle"
-              align="left"
-              wrapperStyle={{ left: 0, width: '25%' }}
-            />
+            <Tooltip content={hasData ? <CustomTooltip /> : null} />
+            {hasData && (
+              <Legend
+                content={<CustomLegend />}
+                verticalAlign="middle"
+                align="left"
+                wrapperStyle={{ left: 0, width: '25%' }}
+              />
+            )}
           </PieChart>
         </ResponsiveContainer>
       </div>

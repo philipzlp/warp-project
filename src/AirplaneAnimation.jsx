@@ -40,9 +40,9 @@ function AirplaneAnimation({
           setShowAnimation(true)
           setAnimationPhase('moving')
           
-          // For take-off, start the result animation earlier (1 second) so it takes off before reaching wall
+          // For take-off, start the result animation earlier (2.5 seconds) so it takes off from middle of screen
           // For crash, wait longer (2 seconds) so it reaches the wall first
-          const resultDelay = isTakeOff ? 1000 : 2000
+          const resultDelay = isTakeOff ? 2500 : 2000
           
           const resultTimer = setTimeout(() => {
             setAnimationPhase('result')
@@ -155,23 +155,27 @@ function AirplaneAnimation({
         {/* Company Name and Rocket */}
         <div style={{
           position: 'absolute',
-          bottom: '20%',
+          bottom: '20%', // Always at runway level until takeoff
           left: animationPhase === 'moving' 
-            ? (isTakeOff ? 'calc(95% - 120px - 100px)' : 'calc(95% - 120px - 10px)') // For take-off, start earlier (further from wall); for crash, approach wall
+            ? (isTakeOff ? '50%' : 'calc(95% - 120px - 10px)') // For take-off, move horizontally to halfway point (50%); for crash, approach wall
             : animationPhase === 'result' && !isTakeOff
             ? 'calc(95% - 120px)' // Position at crash wall (hits it)
             : animationPhase === 'result' && isTakeOff
-            ? 'calc(95% - 120px - 50px - 15px)' // Start take-off from well before the wall, 15px to the left
+            ? '50%' // Start take-off from halfway point (where horizontal movement ended)
+            : isTakeOff 
+            ? '5%' // Start from left side for take-off
             : `${5 + planePosition}%`,
-          transform: animationPhase === 'result' && isTakeOff 
-            ? 'translateX(250px) translateY(-800px) rotate(-15deg) scale(1.2)' // Diagonal take-off: moves right and up, clearing entire wall from left side
+          transform: animationPhase === 'moving' && isTakeOff
+            ? 'translateY(0) rotate(0deg)' // Stay on ground, moving horizontally only
+            : animationPhase === 'result' && isTakeOff 
+            ? 'translateX(calc(50vw - 50% + 120px + 50px)) translateY(-900px) rotate(-20deg) scale(1.3)' // Diagonal take-off: moves right (past entire wall) and up, clearing wall completely
             : animationPhase === 'result' && !isTakeOff
             ? 'translateX(10px) translateY(20px) rotate(45deg) scale(0.8)'
             : 'translateY(0)',
           transition: animationPhase === 'moving'
-            ? (isTakeOff ? 'left 1s ease-in' : 'left 2s ease-in') // Faster approach for take-off
+            ? (isTakeOff ? 'left 2.5s ease-out' : 'left 2s ease-in') // Horizontal movement only for take-off
             : animationPhase === 'result' 
-            ? (isTakeOff ? 'all 3s linear' : 'all 1.5s ease-in') // Linear diagonal take-off
+            ? (isTakeOff ? 'all 3.5s ease-out' : 'all 1.5s ease-in') // Smooth diagonal take-off
             : 'none',
           zIndex: 10,
           display: 'flex',

@@ -41,6 +41,8 @@ function ViralDashboard({
   const [showPredictionResult, setShowPredictionResult] = useState(false)
   const [warpSaveToggle, setWarpSaveToggle] = useState(false)
   const [shouldAnimate, setShouldAnimate] = useState(false)
+  const [isConnectingBank, setIsConnectingBank] = useState(false)
+  const [showBankMessage, setShowBankMessage] = useState(false)
   const pdfExportRef = useRef(null)
 
   // Update local scenario when currentScenario changes
@@ -346,7 +348,7 @@ Plan your startup's growth: [link]`
 
   return (
     <div style={{ 
-      padding: '2rem',
+        padding: '2rem',
       minHeight: '100vh',
       color: '#fff',
       position: 'relative',
@@ -354,6 +356,10 @@ Plan your startup's growth: [link]`
       overflow: 'hidden',
     }}>
       <style>{`
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
         @keyframes fadeIn {
           from {
             opacity: 0;
@@ -381,7 +387,7 @@ Plan your startup's growth: [link]`
           right: 0;
           bottom: 0;
           z-index: -1;
-          animation: disco 1.5s linear infinite;
+          animation: disco 14s linear infinite;
         }
       `}</style>
       <div className="disco-background"></div>
@@ -901,6 +907,87 @@ Plan your startup's growth: [link]`
         >
           ➕ Add Expense
         </button>
+
+        {/* Connect Bank Account Button */}
+        <button
+          onClick={() => {
+            setIsConnectingBank(true)
+            setShowBankMessage(false)
+            // Show connecting spinner for 2 seconds, then show message
+            setTimeout(() => {
+              setIsConnectingBank(false)
+              setShowBankMessage(true)
+            }, 2000)
+          }}
+          disabled={isConnectingBank}
+          style={{
+            width: '100%',
+            padding: '1rem',
+            borderRadius: '12px',
+            border: 'none',
+            backgroundColor: isConnectingBank ? '#9ca3af' : '#10b981',
+            color: '#fff',
+            fontSize: '1.1rem',
+            fontWeight: 600,
+            cursor: isConnectingBank ? 'not-allowed' : 'pointer',
+            boxShadow: '0 4px 12px rgba(16, 185, 129, 0.4)',
+            marginTop: '1.5rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '0.5rem',
+          }}
+        >
+          {isConnectingBank ? (
+            <>
+              <span style={{
+                display: 'inline-block',
+                width: '16px',
+                height: '16px',
+                border: '2px solid #ffffff',
+                borderTopColor: 'transparent',
+                borderRadius: '50%',
+                animation: 'spin 0.8s linear infinite',
+              }}></span>
+              Connecting...
+            </>
+          ) : (
+            '🏦 Connect Bank Account'
+          )}
+        </button>
+
+        {/* Bank Connection Message */}
+        {showBankMessage && (
+          <div style={{
+            marginTop: '1rem',
+            padding: '1rem',
+            backgroundColor: '#f0f9ff',
+            borderRadius: '12px',
+            border: '2px solid #3b82f6',
+            textAlign: 'center',
+          }}>
+            <p style={{
+              margin: 0,
+              fontSize: '1rem',
+              color: '#1f2937',
+              lineHeight: '1.6',
+            }}>
+              Just kidding. But Warp actually does this.{' '}
+              <a
+                href="https://www.joinwarp.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  color: '#3b82f6',
+                  fontWeight: 600,
+                  textDecoration: 'underline',
+                }}
+              >
+                Sign up here.
+              </a>
+            </p>
+          </div>
+        )}
 
         {/* Warp Save Toggle */}
         <div style={{ marginTop: '1.5rem', marginBottom: '1.5rem' }}>

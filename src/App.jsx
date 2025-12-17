@@ -386,6 +386,7 @@ function App() {
 
   // Refs for PDF export
   const summaryRef = useRef(null)
+  const summaryContentRef = useRef(null) // Summary without buttons
   const tableRef = useRef(null)
   const chartRef = useRef(null)
   const rolePieChartRef = useRef(null)
@@ -411,13 +412,41 @@ function App() {
       // Add title
       pdf.setFontSize(18)
       pdf.text(currentScenario.name, pageWidth / 2, yPosition, { align: 'center' })
-      yPosition += 10
+      yPosition += 1 // Reduced space between title and summary
 
-      // Capture and add summary (formal header)
-      if (summaryRef.current) {
-        const summaryCanvas = await html2canvas(summaryRef.current, {
+      // Capture and add summary (without buttons)
+      if (summaryContentRef.current) {
+        const summaryCanvas = await html2canvas(summaryContentRef.current, {
           backgroundColor: '#ffffff',
           scale: 2,
+          onclone: (clonedDoc) => {
+            // Ensure full width and proper text wrapping for PDF
+            const clonedContainer = clonedDoc.querySelector('.summary-content-pdf')
+            if (clonedContainer) {
+              clonedContainer.style.maxWidth = '100%'
+              clonedContainer.style.width = '100%'
+              clonedContainer.style.wordWrap = 'break-word'
+              clonedContainer.style.overflowWrap = 'break-word'
+              clonedContainer.style.paddingBottom = '20px' // Add bottom padding to prevent text cutoff
+            }
+            // Also update the card container if it exists
+            const clonedCard = clonedContainer?.closest('.card')
+            if (clonedCard) {
+              clonedCard.style.maxWidth = '100%'
+              clonedCard.style.width = '100%'
+              clonedCard.style.paddingBottom = '20px' // Add bottom padding to card as well
+            }
+            // Ensure all paragraphs can wrap
+            const paragraphs = clonedContainer?.querySelectorAll('p')
+            if (paragraphs) {
+              paragraphs.forEach(p => {
+                p.style.wordWrap = 'break-word'
+                p.style.overflowWrap = 'break-word'
+                p.style.whiteSpace = 'normal'
+                p.style.marginBottom = '8px' // Add margin to last paragraph
+              })
+            }
+          },
         })
         const summaryImg = summaryCanvas.toDataURL('image/png')
         const imgWidth = pageWidth - 2 * margin
@@ -425,10 +454,10 @@ function App() {
         
         checkNewPage(imgHeight)
         pdf.addImage(summaryImg, 'PNG', margin, yPosition, imgWidth, imgHeight)
-        yPosition += imgHeight + 5
+        yPosition += imgHeight + 5 // More space after summary to prevent overlap
       }
 
-      // Capture and add AI insights directly under summary
+      // Capture and add AI insights directly under summary (full width)
       if (aiInsightsRef.current) {
         const container = aiInsightsRef.current.querySelector('.ai-insights-container')
         const hasContent = container && (
@@ -439,9 +468,18 @@ function App() {
           const aiCanvas = await html2canvas(aiInsightsRef.current, {
             backgroundColor: '#ffffff',
             scale: 2,
+            onclone: (clonedDoc) => {
+              // Remove maxWidth constraint for PDF to make it full width
+              const clonedContainer = clonedDoc.querySelector('.ai-insights-container')
+              if (clonedContainer) {
+                clonedContainer.style.maxWidth = '100%'
+                clonedContainer.style.width = '100%'
+                clonedContainer.style.margin = '0'
+              }
+            },
           })
           const aiImg = aiCanvas.toDataURL('image/png')
-          const imgWidth = pageWidth - 2 * margin
+          const imgWidth = pageWidth - 2 * margin // Full width
           const imgHeight = (aiCanvas.height * imgWidth) / aiCanvas.width
           
           checkNewPage(imgHeight)
@@ -480,30 +518,60 @@ function App() {
         yPosition += imgHeight + 5
       }
 
-      // Capture and add role spending pie chart
-      if (rolePieChartRef.current) {
+      // Capture and add both pie charts side by side
+      const pieChartWidth = (pageWidth - 3 * margin) / 2 // Two charts with gap between
+      const pieChartGap = margin
+      
+      if (rolePieChartRef.current && categoryPieChartRef.current) {
+        // Capture both charts
+        const rolePieCanvas = await html2canvas(rolePieChartRef.current, {
+          backgroundColor: '#ffffff',
+          scale: 2,
+        })
+        const categoryPieCanvas = await html2canvas(categoryPieChartRef.current, {
+          backgroundColor: '#ffffff',
+          scale: 2,
+        })
+        
+        const rolePieImg = rolePieCanvas.toDataURL('image/png')
+        const categoryPieImg = categoryPieCanvas.toDataURL('image/png')
+        
+        // Calculate heights - use the taller one
+        const roleImgHeight = (rolePieCanvas.height * pieChartWidth) / rolePieCanvas.width
+        const categoryImgHeight = (categoryPieCanvas.height * pieChartWidth) / categoryPieCanvas.width
+        const maxHeight = Math.max(roleImgHeight, categoryImgHeight)
+        
+        checkNewPage(maxHeight)
+        
+        // Add role pie chart on the left
+        pdf.addImage(rolePieImg, 'PNG', margin, yPosition, pieChartWidth, roleImgHeight)
+        
+        // Add category pie chart on the right
+        pdf.addImage(categoryPieImg, 'PNG', margin + pieChartWidth + pieChartGap, yPosition, pieChartWidth, categoryImgHeight)
+        
+        yPosition += maxHeight + 5
+      } else if (rolePieChartRef.current) {
+        // Only role chart available
         const pieCanvas = await html2canvas(rolePieChartRef.current, {
           backgroundColor: '#ffffff',
           scale: 2,
         })
         const pieImg = pieCanvas.toDataURL('image/png')
-        const imgWidth = Math.min(90, pageWidth - 2 * margin) // smaller, more formal
+        const imgWidth = Math.min(90, pageWidth - 2 * margin)
         const imgHeight = (pieCanvas.height * imgWidth) / pieCanvas.width
         const xPos = (pageWidth - imgWidth) / 2
         
         checkNewPage(imgHeight)
         pdf.addImage(pieImg, 'PNG', xPos, yPosition, imgWidth, imgHeight)
         yPosition += imgHeight + 5
-      }
-
-      // Capture and add category pie chart
-      if (categoryPieChartRef.current) {
+      } else if (categoryPieChartRef.current) {
+        // Only category chart available
         const pieCanvas = await html2canvas(categoryPieChartRef.current, {
           backgroundColor: '#ffffff',
           scale: 2,
         })
         const pieImg = pieCanvas.toDataURL('image/png')
-        const imgWidth = Math.min(90, pageWidth - 2 * margin) // smaller, more formal
+        const imgWidth = Math.min(90, pageWidth - 2 * margin)
         const imgHeight = (pieCanvas.height * imgWidth) / pieCanvas.width
         const xPos = (pageWidth - imgWidth) / 2
         
@@ -765,7 +833,7 @@ function App() {
               100% { color: #ff00ff; }
             }
             .disco-title {
-              animation: discoText 1.5s linear infinite;
+              animation: discoText 14s linear infinite;
             }
           `}</style>
           <h1 
@@ -867,7 +935,10 @@ function App() {
               e.target.style.textDecoration = 'none'
             }}
           >
-            Streamline your payroll and compliance with Warp →
+            {mode === 'viral' 
+              ? 'Hate Spending Time on Back-Office Tasks? Call 1-800-GET-WARP'
+              : 'Streamline your payroll and compliance with Warp →'
+            }
           </a>
         </div>
 
@@ -1374,9 +1445,8 @@ function App() {
                               backgroundColor: '#e3f2fd',
                               marginBottom: '0.25rem',
                               display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'space-between',
-                              gap: '0.3rem',
+                              flexDirection: 'column',
+                              gap: '0.2rem',
                             }}
                           >
                             <span style={{ flex: 1 }}>{hire.title}</span>
@@ -1394,6 +1464,7 @@ function App() {
                                 padding: '0.1rem 0.3rem',
                                 borderRadius: '4px',
                                 lineHeight: 1,
+                                alignSelf: 'flex-start',
                               }}
                               onMouseEnter={(e) => {
                                 e.target.style.backgroundColor = '#ff4444'
@@ -1419,9 +1490,8 @@ function App() {
                               backgroundColor: '#fff3cd',
                               marginBottom: '0.25rem',
                               display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'space-between',
-                              gap: '0.3rem',
+                              flexDirection: 'column',
+                              gap: '0.2rem',
                             }}
                           >
                             <span style={{ flex: 1 }}>
@@ -1444,6 +1514,7 @@ function App() {
                                 padding: '0.1rem 0.3rem',
                                 borderRadius: '4px',
                                 lineHeight: 1,
+                                alignSelf: 'flex-start',
                               }}
                               onMouseEnter={(e) => {
                                 e.target.style.backgroundColor = '#ff4444'
@@ -1479,23 +1550,25 @@ function App() {
             <button
               onClick={handleSaveCurrentScenario}
               style={{
-                padding: '1.25rem 2.5rem',
-                backgroundColor: '#1a73e8',
-                color: '#ffffff',
-                border: 'none',
+                padding: '0.5rem 4rem',
+                backgroundColor: '#ffffff',
+                color: '#1a73e8',
+                border: '2px solid #1a73e8',
                 borderRadius: '8px',
                 fontSize: '1.1rem',
                 fontWeight: 600,
                 cursor: 'pointer',
                 boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
                 transition: 'all 0.2s',
+                width: 'auto',
+                minWidth: '300px',
               }}
               onMouseEnter={(e) => {
-                e.target.style.backgroundColor = '#1557b0'
+                e.target.style.backgroundColor = '#f0f7ff'
                 e.target.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.15)'
               }}
               onMouseLeave={(e) => {
-                e.target.style.backgroundColor = '#1a73e8'
+                e.target.style.backgroundColor = '#ffffff'
                 e.target.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.1)'
               }}
             >
@@ -1505,41 +1578,42 @@ function App() {
         )}
         
         <div className="card" ref={summaryRef}>
-          <h2 style={{ margin: '0 0 1rem 0', textAlign: 'center', fontSize: '2rem', fontWeight: 700 }}>
-            Summary
-          </h2>
-          {loadedFromURL && (
-            <div style={{
-              padding: '0.75rem',
-              marginBottom: '0.75rem',
-              backgroundColor: '#d1fae5',
-              borderRadius: '6px',
-              border: '1px solid #10b981',
-              fontSize: '0.9rem',
-              color: '#065f46',
-            }}>
-              Loaded from shared link
-            </div>
-          )}
-          <p>
-            <strong>Scenario:</strong> {currentScenario.name}
-          </p>
-          <p>
-            <strong>Starting cash:</strong> {currentScenario.currency}{' '}
-            {currentScenario.startingCash.toLocaleString()}
-          </p>
-          <p>
-            <strong>Average monthly burn:</strong>{' '}
-            {currentScenario.currency}{' '}
-            {Math.round(runway.averageMonthlyBurn).toLocaleString()}
-          </p>
-          <p>
-            <strong>Estimated runway:</strong>{' '}
-            {runway.hasRunwayEnd
-              ? `${runway.runwayMonths}
-                months`
-              : 'No cash-out within projection window'}
-          </p>
+          <div ref={summaryContentRef} className="summary-content-pdf" style={{ width: '100%', wordWrap: 'break-word', overflowWrap: 'break-word' }}>
+            <h2 style={{ margin: '0 0 1rem 0', textAlign: 'center', fontSize: '2rem', fontWeight: 700 }}>
+              Summary
+            </h2>
+            {loadedFromURL && (
+              <div style={{
+                padding: '0.75rem',
+                marginBottom: '0.75rem',
+                backgroundColor: '#d1fae5',
+                borderRadius: '6px',
+                border: '1px solid #10b981',
+                fontSize: '0.9rem',
+                color: '#065f46',
+              }}>
+                Loaded from shared link
+              </div>
+            )}
+            <p>
+              <strong>Scenario:</strong> {currentScenario.name}
+            </p>
+            <p>
+              <strong>Starting cash:</strong> {currentScenario.currency}{' '}
+              {currentScenario.startingCash.toLocaleString()}
+            </p>
+            <p>
+              <strong>Average monthly burn:</strong>{' '}
+              {currentScenario.currency}{' '}
+              {Math.round(runway.averageMonthlyBurn).toLocaleString()}
+            </p>
+            <p style={{ wordWrap: 'break-word', overflowWrap: 'break-word' }}>
+              <strong>Estimated runway:</strong>{' '}
+              {runway.hasRunwayEnd
+                ? `${runway.runwayMonths} months`
+                : 'No cash-out within projection window'}
+            </p>
+          </div>
           <div style={{ display: 'flex', justifyContent: 'center', gap: '0.5rem', marginTop: '1.5rem' }}>
             <button
               onClick={handleShareScenario}
