@@ -1,0 +1,39 @@
+Design Notes
+
+Note: To begin this project, I worked with Gemini to understand the best way to build this from scratch to a usable product in a 
+rather short time. After going back and forth to understand what would be best for this type of tech stack, we decided on 
+React, JS, Tailwind CSS and a couple other front end components. I do not have extensive experience in front end or design work, 
+so much of that was done via Cursor. In working with Gemini to set up this project, we came to the following decisions
+for various reasons:
+
+My Tech Stack Choices
+
+Framework: React (via Vite)
+I chose this because React is the industry standard for smooth interfaces, which seemed best to me for the drag and drop requirement. 
+It also seemed to have the least ramp up, so I could build from srcatch easily as a new user. 
+
+Language: JavaScript
+I have some SWE experience with JavaScript. I knew it was sufficient for this project's scope and rapid development
+and would work well in tandem with the other components here.
+
+Styling: Tailwind CSS
+Gemini suggested this as it works best with Cursor, allowing the easiest frontend dev considering I don't have as much experience. 
+It was the easiest for the rapid development and easy styling of the application. 
+
+Drag & Drop: @dnd-kit/core
+Given I needed a drag and drop interface, Gemini suggested this as the easiest and best to build quickly, while still allowing complex operations.
+
+Charts: Recharts
+Recharts is built for react, so this was obvious to me as the choice for graphing the runway. Plus, these graphs look professional enough for utility
+but configurable enough for cool functionality in the Viral version .
+
+One big decision I made was to use shareable URLs instead of a database. I went back and forth many times on this choice, but kept this implementation
+for the following reasons. Mostly, because I had to build so quickly and keep the applicaiton light, URLs allowed funcaitonality I needed: sharing. I 
+could save states and share, both of which were requirements. I also didn't have to worry about security and privacy, which seemed like an added bonues
+considering the speed I needed to develop. In the future to enhance this project, I would definitely switch my implementation to maintaining a backend database.
+
+My backend design is rather minimal as I was trying to maintain a light application. But, I had to handle the AI interactions with Ollama here.
+I had a coouple endpoints for the ai insights and predictions. I wanted to keep most state management on the client side as discussed above. 
+
+A couple design patterns I stuck to include having one engine for the two frontends - this was to speed up my development. Sharing as much
+code as possible was an obvious way to stay light and quick. I used localStorage for saving scenarios within the browser and URLs for sharing.
