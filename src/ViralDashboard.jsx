@@ -1,11 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
 import {
-  seedStageScenario,
   availableRoles,
   runBurnRate,
   estimateRunway,
 } from './engine'
-import { getAISuggestions, predictOutcome } from './engine/ai.js'
+import { predictOutcome } from './engine/ai.js'
 import CashRunwayChart from './CashRunwayChart.jsx'
 import AirplaneAnimation from './AirplaneAnimation.jsx'
 import jsPDF from 'jspdf'
@@ -23,7 +22,6 @@ function ViralDashboard({
   burnResult, 
   runway,
   onScenarioChange,
-  onGenerateAI,
 }) {
   const [localScenario, setLocalScenario] = useState(currentScenario)
   const [expenseForm, setExpenseForm] = useState({
@@ -47,30 +45,36 @@ function ViralDashboard({
 
   // Update local scenario when currentScenario changes
   useEffect(() => {
-    setLocalScenario(currentScenario)
-    setProjectionMonths(currentScenario.projectionMonths || 12)
+    // Batch all state updates to avoid synchronous setState warnings
+    const updateState = () => {
+      setLocalScenario(currentScenario)
+      setProjectionMonths(currentScenario.projectionMonths || 12)
+      
+      // Restore or reset viral mode specific data based on scenario
+      if (currentScenario.companyName !== undefined) {
+        setCompanyName(currentScenario.companyName)
+      } else {
+        setCompanyName('')
+      }
+      if (currentScenario.companySummary !== undefined) {
+        setCompanySummary(currentScenario.companySummary)
+      } else {
+        setCompanySummary('')
+      }
+      if (currentScenario.prediction !== undefined && currentScenario.prediction !== null) {
+        setPrediction(currentScenario.prediction)
+        setShowPredictionResult(true)
+        setShouldAnimate(false) // Don't animate when restoring from state/URL
+      } else {
+        // Reset prediction state when not in scenario
+        setPrediction(null)
+        setShowPredictionResult(false)
+        setShouldAnimate(false)
+      }
+    }
     
-    // Restore or reset viral mode specific data based on scenario
-    if (currentScenario.companyName !== undefined) {
-      setCompanyName(currentScenario.companyName)
-    } else {
-      setCompanyName('')
-    }
-    if (currentScenario.companySummary !== undefined) {
-      setCompanySummary(currentScenario.companySummary)
-    } else {
-      setCompanySummary('')
-    }
-    if (currentScenario.prediction !== undefined && currentScenario.prediction !== null) {
-      setPrediction(currentScenario.prediction)
-      setShowPredictionResult(true)
-      setShouldAnimate(false) // Don't animate when restoring from state/URL
-    } else {
-      // Reset prediction state when not in scenario
-      setPrediction(null)
-      setShowPredictionResult(false)
-      setShouldAnimate(false)
-    }
+    // Use requestAnimationFrame to defer state updates
+    requestAnimationFrame(updateState)
   }, [currentScenario])
 
   // Recalculate when local scenario changes
@@ -188,18 +192,36 @@ function ViralDashboard({
   }
 
   // Calculate "death clock" - when cash runs out
-  const deathDate = runway.hasRunwayEnd 
-    ? new Date(Date.now() + runway.runwayMonths * 30 * 24 * 60 * 60 * 1000)
-    : null
-
-  const formatDeathClock = () => {
-    if (!deathDate) return '∞ (You\'re immortal!)'
-    const now = new Date()
-    const diff = deathDate - now
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24))
-    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
-    return `${days} days, ${hours} hours`
-  }
+  const [deathClockText, setDeathClockText] = useState('∞ (You\'re immortal!)')
+  
+  useEffect(() => {
+    if (!runway.hasRunwayEnd) {
+      setTimeout(() => {
+        setDeathClockText('∞ (You\'re immortal!)')
+      }, 0)
+      return
+    }
+    
+    const now = Date.now()
+    const deathDate = new Date(now + runway.runwayMonths * 30 * 24 * 60 * 60 * 1000)
+    
+    // Update the death clock text
+    const updateDeathClock = () => {
+      const currentNow = new Date()
+      const diff = deathDate - currentNow
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+      setDeathClockText(`${days} days, ${hours} hours`)
+    }
+    
+    // Update immediately (wrapped to avoid synchronous setState)
+    setTimeout(updateDeathClock, 0)
+    
+    // Update every minute
+    const interval = setInterval(updateDeathClock, 60000)
+    
+    return () => clearInterval(interval)
+  }, [runway.hasRunwayEnd, runway.runwayMonths])
 
   const getRunwayEmoji = () => {
     if (!runway.hasRunwayEnd) return '🦄'
@@ -1310,7 +1332,7 @@ Plan your startup's growth: [link]`
         )}
         {runway.hasRunwayEnd && (
           <div style={{ fontSize: '1.5rem', color: '#6b7280', marginBottom: '2rem' }}>
-            Time remaining: {formatDeathClock()}
+            Time remaining: {deathClockText}
           </div>
         )}
         <div style={{ 
@@ -1371,7 +1393,6 @@ Plan your startup's growth: [link]`
       }}>
         <CashRunwayChart
           monthly={burnResult.monthly}
-          currency={currentScenario.currency}
           startingCash={currentScenario.startingCash}
         />
       </div>

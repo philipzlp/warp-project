@@ -21,7 +21,69 @@ const COLORS = [
   '#6366f1', // indigo
 ]
 
-function RoleSpendingPieChart({ scenario, burnResult, currency }) {
+// Custom tooltip component - defined outside to avoid creating during render
+const CustomTooltip = ({ active, payload, totalSpending, formatCurrency }) => {
+  if (active && payload && payload.length) {
+    const data = payload[0]
+    const total = data.payload.value
+    const percentage = totalSpending > 0 ? ((total / totalSpending) * 100).toFixed(1) : '0.0'
+    return (
+      <div
+        style={{
+          backgroundColor: '#fff',
+          padding: '0.5rem',
+          border: '1px solid #ccc',
+          borderRadius: '4px',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+        }}
+      >
+        <p style={{ margin: 0, fontWeight: 600 }}>{data.name}</p>
+        <p style={{ margin: '0.25rem 0 0', color: '#666' }}>
+          {formatCurrency(total)} ({percentage}%)
+        </p>
+      </div>
+    )
+  }
+  return null
+}
+
+// Custom legend component - defined outside to avoid creating during render
+const CustomLegend = ({ payload }) => {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '0.75rem',
+        padding: '1rem',
+      }}
+    >
+      {payload.map((entry, index) => (
+        <div
+          key={index}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+          }}
+        >
+          <div
+            style={{
+              width: '14px',
+              height: '14px',
+              backgroundColor: entry.color,
+              borderRadius: '3px',
+              flexShrink: 0,
+            }}
+          />
+          <span style={{ fontSize: '0.9rem', color: '#333' }}>{entry.value}</span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function RoleSpendingPieChart({ scenario, currency }) {
   // Calculate total spending per role
   const roleSpending = {}
   let hasData = false
@@ -63,65 +125,8 @@ function RoleSpendingPieChart({ scenario, burnResult, currency }) {
 
   const totalSpending = hasData ? data.reduce((sum, item) => sum + item.value, 0) : 0
 
-  const CustomTooltip = ({ active, payload }) => {
-    if (active && payload && payload.length) {
-      const data = payload[0]
-      const total = data.payload.value
-      const percentage = ((total / totalSpending) * 100).toFixed(1)
-      return (
-        <div
-          style={{
-            backgroundColor: '#fff',
-            padding: '0.5rem',
-            border: '1px solid #ccc',
-            borderRadius: '4px',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-          }}
-        >
-          <p style={{ margin: 0, fontWeight: 600 }}>{data.name}</p>
-          <p style={{ margin: '0.25rem 0 0', color: '#666' }}>
-            {formatCurrency(total)} ({percentage}%)
-          </p>
-        </div>
-      )
-    }
-    return null
-  }
-
-  const CustomLegend = ({ payload }) => {
-    return (
-      <div
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '0.75rem',
-          padding: '1rem',
-        }}
-      >
-        {payload.map((entry, index) => (
-          <div
-            key={index}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-            }}
-          >
-            <div
-              style={{
-                width: '14px',
-                height: '14px',
-                backgroundColor: entry.color,
-                borderRadius: '3px',
-                flexShrink: 0,
-              }}
-            />
-            <span style={{ fontSize: '0.9rem', color: '#333' }}>{entry.value}</span>
-          </div>
-        ))}
-      </div>
-    )
-  }
+  // Wrapper components that pass the needed props
+  const TooltipWrapper = (props) => <CustomTooltip {...props} totalSpending={totalSpending} formatCurrency={formatCurrency} />
 
   return (
     <div
@@ -164,10 +169,10 @@ function RoleSpendingPieChart({ scenario, burnResult, currency }) {
                 />
               ))}
             </Pie>
-            <Tooltip content={hasData ? <CustomTooltip /> : null} />
+            <Tooltip content={hasData ? TooltipWrapper : null} />
             {hasData && (
               <Legend
-                content={<CustomLegend />}
+                content={CustomLegend}
                 verticalAlign="middle"
                 align="left"
                 wrapperStyle={{ left: 0, width: '25%' }}

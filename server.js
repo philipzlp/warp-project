@@ -80,7 +80,7 @@ Average Monthly Burn: $${Math.round(summary.averageMonthlyBurn).toLocaleString()
 ${runway.hasRunwayEnd ? `Cash runs out in month ${runway.runwayMonths}` : `Projected ending cash: $${Math.round(runway.endingCash).toLocaleString()}`}`
 
     // Call Ollama API
-    console.log(`🔄 Calling Ollama (${OLLAMA_MODEL})...`)
+    console.log(`Calling Ollama (${OLLAMA_MODEL})...`)
     
     try {
       const response = await fetch(`${OLLAMA_URL}/api/generate`, {
@@ -101,7 +101,7 @@ ${runway.hasRunwayEnd ? `Cash runs out in month ${runway.runwayMonths}` : `Proje
 
       if (!response.ok) {
         const errorText = await response.text().catch(() => '')
-        console.error(`❌ Ollama API error (${response.status}):`, errorText)
+        console.error(`Ollama API error (${response.status}):`, errorText)
         
         if (response.status === 404) {
           return res.status(500).json({
@@ -243,7 +243,7 @@ ${runway.hasRunwayEnd ? `Cash runs out in month ${runway.runwayMonths}` : `Proje
       
       // Debug: log what we got if parsing failed
       if (!parsed) {
-        console.log(`📝 Raw response preview (first 500 chars):`, cleanedText.substring(0, 500))
+        console.log(`Raw response preview (first 500 chars):`, cleanedText.substring(0, 500))
       }
 
       // Validate parsed structure
@@ -253,7 +253,7 @@ ${runway.hasRunwayEnd ? `Cash runs out in month ${runway.runwayMonths}` : `Proje
       
       if (hasValidSummary && (hasValidRisks || hasValidSuggestions)) {
         // Return structured response
-        console.log(`✅ Successfully got response from Ollama`)
+        console.log(`Successfully got response from Ollama`)
         
         // Clean the summary - extract just the summary text, not the whole JSON
         let cleanSummary = String(parsed.summary).trim()
@@ -397,7 +397,7 @@ ${runway.hasRunwayEnd ? `Cash runs out in month ${runway.runwayMonths}` : `Proje
       }
 
       // Fallback: if JSON parsing failed, try to extract structured data from text
-      console.log(`⚠️  Could not parse JSON from Ollama, attempting text extraction`)
+      console.log(`Could not parse JSON from Ollama, attempting text extraction`)
       
       // Try to extract summary, risks, and suggestions using regex patterns
       let fallbackSummary = cleanedText.split('\n').slice(0, 3).join(' ').trim() || 'AI analysis generated.'
@@ -562,7 +562,7 @@ ${runway.hasRunwayEnd ? `Cash runs out in month ${runway.runwayMonths}` : `Proje
       console.log('📤 Sending fallback response:', JSON.stringify(fallbackResponse, null, 2))
       return res.json(fallbackResponse)
     } catch (fetchError) {
-      console.error('❌ Error calling Ollama:', fetchError.message)
+      console.error('Error calling Ollama:', fetchError.message)
       
       if (fetchError.code === 'ECONNREFUSED') {
         return res.status(500).json({
@@ -653,7 +653,7 @@ Respond with ONLY a JSON object in this exact format (no backticks, no extra tex
 {"prediction":"TAKE OFF" or "CRASH","confidence":"HIGH" or "MEDIUM" or "LOW","reasoning":"A brief 2-3 sentence explanation of your prediction","companyType":"A brief comment about the type of company and its characteristics based on the summary"}`
 
     // Call Ollama API
-    console.log(`🔄 Calling Ollama (${OLLAMA_MODEL}) for outcome prediction...`)
+    console.log(`Calling Ollama (${OLLAMA_MODEL}) for outcome prediction...`)
     
     try {
       const response = await fetch(`${OLLAMA_URL}/api/generate`, {
@@ -674,7 +674,7 @@ Respond with ONLY a JSON object in this exact format (no backticks, no extra tex
 
       if (!response.ok) {
         const errorText = await response.text()
-        console.error(`❌ Ollama API error (${response.status}):`, errorText)
+        console.error(`Ollama API error (${response.status}):`, errorText)
         
         if (response.status === 404) {
           return res.status(503).json({
@@ -690,7 +690,7 @@ Respond with ONLY a JSON object in this exact format (no backticks, no extra tex
       const data = await response.json()
       const fullText = data.response || ''
 
-      console.log('📝 Raw Ollama response:', fullText.substring(0, 200))
+      console.log('Raw Ollama response:', fullText.substring(0, 200))
 
       // Try to extract JSON from the response
       let predictionResult
@@ -727,11 +727,11 @@ Respond with ONLY a JSON object in this exact format (no backticks, no extra tex
         companyType: predictionResult.companyType || predictionResult.company_type || 'Company type not specified',
       }
 
-      console.log('✅ Prediction result:', normalized)
+      console.log('Prediction result:', normalized)
 
       return res.json(normalized)
     } catch (fetchError) {
-      console.error('❌ Error calling Ollama:', fetchError.message)
+      console.error('Error calling Ollama:', fetchError.message)
       
       if (fetchError.code === 'ECONNREFUSED') {
         return res.status(503).json({
@@ -744,7 +744,7 @@ Respond with ONLY a JSON object in this exact format (no backticks, no extra tex
       })
     }
   } catch (error) {
-    console.error('❌ Error in /api/predict-outcome:', error)
+    console.error('Error in /api/predict-outcome:', error)
     return res.status(500).json({
       error: 'Internal server error',
       details: error.message,
@@ -754,7 +754,7 @@ Respond with ONLY a JSON object in this exact format (no backticks, no extra tex
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`🚀 Backend server running on http://localhost:${PORT}`)
+  console.log(`Backend server running on http://localhost:${PORT}`)
   console.log(`🤖 Ollama URL: ${OLLAMA_URL}`)
   console.log(`📦 Ollama Model: ${OLLAMA_MODEL}`)
   console.log(`\n💡 Make sure Ollama is running: ollama serve`)

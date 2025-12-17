@@ -611,6 +611,7 @@ function App() {
           backgroundColor: '#000',
           color: '#fff',
           padding: '1.5rem 1rem',
+          paddingBottom: '4rem', // Extra padding at bottom for logo
           display: 'flex',
           flexDirection: 'column',
           gap: '0.5rem',
@@ -620,6 +621,25 @@ function App() {
           overflowY: 'auto',
         }}
       >
+        <div style={{
+          marginBottom: '1.5rem',
+          marginTop: '1rem',
+          textAlign: 'center',
+        }}>
+          <div style={{
+            fontSize: '3rem',
+            fontWeight: 700,
+            fontFamily: 'Arial, sans-serif',
+            lineHeight: 1,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '0.1em',
+          }}>
+            <span style={{ color: '#ffffff' }}>V</span>
+            <span style={{ color: '#000000', backgroundColor: '#ffffff', padding: '0 0.1em' }}>U</span>
+          </div>
+        </div>
         <h2 style={{ marginBottom: '1rem', fontSize: '1.1rem', fontWeight: 600 }}>
           Scenarios
         </h2>
@@ -809,6 +829,62 @@ function App() {
             ))}
           </>
         )}
+        
+        {/* Logo - Fixed at bottom */}
+        <div style={{
+          position: 'absolute',
+          bottom: '1.5rem',
+          left: 0,
+          right: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+          pointerEvents: 'auto',
+        }}>
+          <div style={{
+            color: '#ffffff',
+            fontSize: '0.75rem',
+            fontWeight: 500,
+            marginBottom: '0.5rem',
+            textTransform: 'uppercase',
+            letterSpacing: '0.1em',
+          }}>
+            Built By
+          </div>
+          <a
+            href="https://www.linkedin.com/in/zach-philip-910971253"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              textDecoration: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              cursor: 'pointer',
+            }}
+          >
+            <div style={{
+              fontSize: '2.5rem',
+              fontWeight: 700,
+              fontFamily: 'Arial, sans-serif',
+              lineHeight: 1,
+              display: 'flex',
+              alignItems: 'center',
+              position: 'relative',
+            }}>
+              <span style={{ 
+                color: '#D4AF37',
+                WebkitTextStroke: '1.5px #D4AF37',
+                WebkitTextFillColor: 'transparent',
+                textShadow: 'none',
+              }}>Z</span>
+              <span style={{ 
+                color: '#D4AF37',
+                marginLeft: '0.03em',
+              }}>P</span>
+            </div>
+          </a>
+        </div>
       </aside>
 
       {/* Main Content */}
@@ -1729,7 +1805,6 @@ function App() {
         <div ref={chartRef}>
           <CashRunwayChart
             monthly={burnResult.monthly}
-            currency={currentScenario.currency}
             startingCash={currentScenario.startingCash}
           />
         </div>
@@ -1737,7 +1812,6 @@ function App() {
           <div ref={rolePieChartRef} style={{ flex: '1 1 0', minWidth: '300px', maxWidth: '500px' }}>
             <RoleSpendingPieChart
               scenario={currentScenario}
-              burnResult={burnResult}
               currency={currentScenario.currency}
             />
           </div>

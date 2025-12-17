@@ -11,7 +11,7 @@ import {
   Legend,
 } from 'recharts'
 
-function CashRunwayChart({ monthly, currency, startingCash, showSpendAllLine: showSpendAllLineProp }) {
+function CashRunwayChart({ monthly, startingCash, showSpendAllLine: showSpendAllLineProp }) {
   const [showSpendAllLine, setShowSpendAllLine] = useState(showSpendAllLineProp || false)
   
   if (!monthly || monthly.length === 0) return null

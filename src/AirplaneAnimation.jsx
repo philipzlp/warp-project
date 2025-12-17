@@ -67,10 +67,13 @@ function AirplaneAnimation({
       // Reset when prediction is cleared
       hasAnimatedRef.current = false
       predictionIdRef.current = null
-      setShowAnimation(false)
-      setAnimationPhase('idle')
+      // Use setTimeout to avoid synchronous setState in effect
+      setTimeout(() => {
+        setShowAnimation(false)
+        setAnimationPhase('idle')
+      }, 0)
     }
-  }, [prediction?.prediction, prediction?.confidence, autoAnimate]) // Only depend on prediction content, not object reference
+  }, [prediction?.prediction, prediction?.confidence, prediction, autoAnimate]) // Include prediction for dependency
 
   // Notify parent when animation completes (after 5 seconds)
   useEffect(() => {
@@ -505,7 +508,7 @@ function AirplaneAnimation({
       }}>
         {hasRunwayEnd 
           ? `${runwayMonths} months until crash` 
-          : 'Your Runway ✈️'}
+          : 'Your Runway'}
       </div>
     </div>
   )
