@@ -136,6 +136,9 @@ function App() {
   const [loadedFromURL, setLoadedFromURL] = useState(() => {
     return loadScenarioFromURL() !== null
   })
+  
+  // State for Warp savings modal
+  const [showWarpModal, setShowWarpModal] = useState(false)
 
   // Helper to handle view changes and clear URL indicator if needed
   const handleViewChange = (newView) => {
@@ -177,16 +180,34 @@ function App() {
     event.preventDefault()
   }
 
+  // Helper function to check if scenario results in negative cash and show popup
+  function checkAndShowWarpPopup(updatedScenario) {
+    // Only check in utility mode and custom view
+    if (mode === 'utility' && selectedView === 'custom') {
+      const updatedBurnResult = runBurnRate(updatedScenario)
+      const updatedRunway = estimateRunway(updatedBurnResult)
+      
+      // Check if any month has negative cash or if runway ended
+      const hasNegativeCash = updatedBurnResult.monthly.some(month => month.closingCash < 0) || 
+                              updatedRunway.hasRunwayEnd
+      
+      if (hasNegativeCash) {
+        // Show modal about Warp savings
+        setShowWarpModal(true)
+      }
+    }
+  }
+
   function handleMonthDrop(monthIndex, event) {
     event.preventDefault()
     const roleId = event.dataTransfer.getData('text/plain')
     const role = availableRoles.find((r) => r.id === roleId)
     if (!role) return
 
-    setCustomScenario((prev) => ({
-      ...prev,
+    const updatedScenario = {
+      ...customScenario,
       hires: [
-        ...prev.hires,
+        ...customScenario.hires,
         {
           id: makeLocalId(role.id),
           title: role.title,
@@ -194,48 +215,74 @@ function App() {
           startMonth: monthIndex,
         },
       ],
-    }))
+    }
+
+    // Check if this hire causes negative cash
+    checkAndShowWarpPopup(updatedScenario)
+
+    setCustomScenario(updatedScenario)
   }
 
   function handleCustomStartingCashChange(event) {
     const raw = event.target.value.replace(/,/g, '')
     const value = Number(raw) || 0
-    setCustomScenario((prev) => ({
-      ...prev,
+    const updatedScenario = {
+      ...customScenario,
       startingCash: value,
-    }))
+    }
+    
+    // Check if cash goes negative after changing starting cash
+    checkAndShowWarpPopup(updatedScenario)
+    
+    setCustomScenario(updatedScenario)
   }
 
   function handleCustomNonHeadcountChange(event) {
     const raw = event.target.value.replace(/,/g, '')
     const value = Number(raw) || 0
-    setCustomScenario((prev) => ({
-      ...prev,
-      nonHeadcountCosts: prev.nonHeadcountCosts.map((cost) =>
+    const updatedScenario = {
+      ...customScenario,
+      nonHeadcountCosts: customScenario.nonHeadcountCosts.map((cost) =>
         cost.id === 'custom_non_headcount'
           ? { ...cost, monthlyAmount: value }
           : cost,
       ),
-    }))
+    }
+    
+    // Check if cash goes negative after changing non-headcount costs
+    checkAndShowWarpPopup(updatedScenario)
+    
+    setCustomScenario(updatedScenario)
   }
 
   function handleEmployeeCostMultiplierChange(event) {
     const value = Number(event.target.value) || 1.3
-    setCustomScenario((prev) => ({
-      ...prev,
+    const updatedScenario = {
+      ...customScenario,
       employeeCostMultiplier: value,
-    }))
+    }
+    
+    // Check if cash goes negative after changing employee cost multiplier
+    checkAndShowWarpPopup(updatedScenario)
+    
+    setCustomScenario(updatedScenario)
   }
 
   function handleProjectionMonthsChange(event) {
     const value = Number(event.target.value) || 12
     const clampedValue = Math.max(6, Math.min(60, value)) // Between 6 and 60 months
     setProjectionMonths(clampedValue)
+    
     // Update custom scenario immediately
-    setCustomScenario((prev) => ({
-      ...prev,
+    const updatedScenario = {
+      ...customScenario,
       projectionMonths: clampedValue,
-    }))
+    }
+    
+    // Check if cash goes negative after changing projection months
+    checkAndShowWarpPopup(updatedScenario)
+    
+    setCustomScenario(updatedScenario)
   }
 
   // Generate shareable link for current scenario (works with any scenario type)
@@ -363,10 +410,16 @@ function App() {
       isOneTime: customExpenseForm.isOneTime,
     }
 
-    setCustomScenario((prev) => ({
-      ...prev,
-      nonHeadcountCosts: [...prev.nonHeadcountCosts, newExpense],
-    }))
+    // Create updated scenario to check cash remaining
+    const updatedScenario = {
+      ...customScenario,
+      nonHeadcountCosts: [...customScenario.nonHeadcountCosts, newExpense],
+    }
+
+    // Check if cash goes below 0 after adding this expense
+    checkAndShowWarpPopup(updatedScenario)
+
+    setCustomScenario(updatedScenario)
 
     // Reset form
     setCustomExpenseForm({
@@ -623,6 +676,111 @@ function App() {
         padding: 0,
       }}
     >
+      {/* Warp Savings Modal */}
+      {showWarpModal && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 10000,
+          }}
+          onClick={() => setShowWarpModal(false)}
+        >
+          <div
+            style={{
+              backgroundColor: '#ffffff',
+              borderRadius: '12px',
+              padding: '2rem',
+              maxWidth: '500px',
+              width: '90%',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+              position: 'relative',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close button */}
+            <button
+              onClick={() => setShowWarpModal(false)}
+              style={{
+                position: 'absolute',
+                top: '1rem',
+                right: '1rem',
+                background: 'none',
+                border: 'none',
+                fontSize: '1.5rem',
+                cursor: 'pointer',
+                color: '#666',
+                padding: '0.25rem',
+                lineHeight: 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '32px',
+                height: '32px',
+                borderRadius: '50%',
+                transition: 'background-color 0.2s',
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = '#f3f4f6'
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = 'transparent'
+              }}
+            >
+              ×
+            </button>
+            
+            {/* Modal content */}
+            <h2 style={{
+              margin: '0 0 1rem 0',
+              fontSize: '1.5rem',
+              fontWeight: 700,
+              color: '#000000',
+            }}>
+              Your Company Needs You
+            </h2>
+            <p style={{
+              margin: '0 0 1.5rem 0',
+              fontSize: '1rem',
+              color: '#374151',
+              lineHeight: 1.6,
+            }}>
+              Save time and money and focus on what matters. Integrate with Warp to automate your entire back office. 
+            </p>
+            <a
+              href="https://www.joinwarp.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'inline-block',
+                padding: '0.75rem 1.5rem',
+                backgroundColor: '#1a73e8',
+                color: '#ffffff',
+                textDecoration: 'none',
+                borderRadius: '8px',
+                fontWeight: 600,
+                fontSize: '1rem',
+                transition: 'background-color 0.2s',
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = '#1557b0'
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = '#1a73e8'
+              }}
+            >
+              Learn More About Warp →
+            </a>
+          </div>
+        </div>
+      )}
       {/* Left Sidebar */}
       <aside
         style={{
