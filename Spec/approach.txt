@@ -3,27 +3,6 @@ Approach:
 	2. Use robust outline to build, rather than coding features
 	3. Utility first, then viral 
 
-Technical Specs:
-	- One engine, 2 front ends
-	- Continually enhance decision making power/ability of intelligent engine
-    - warp-project/
-        ├── package.json
-        ├── index.html              <-- Entry point
-        ├── src/
-        │   ├── engine/             <-- YOUR "BACKEND" (Pure Logic)
-        │   │   ├── calculations.js <-- RunBurnRate(), EstimateRunway()
-        │   │   └── data.js         <-- Employee types, default salaries
-        │   ├── components/         <-- Shared UI
-        │   │   ├── EmployeeCard.jsx
-        │   │   └── RunwayGraph.jsx
-        │   ├── apps/
-        │   │   ├── utility/        <-- The Professional App
-        │   │   │   └── UtilityDashboard.jsx
-        │   │   └── viral/          <-- The Growth Hack App
-        │   │       └── ViralDashboard.jsx (The "Party" version)
-        │   ├── assets/             <-- Sounds, Viral Images
-        │   └── App.jsx             <-- Router (Choose your mode)
-        └── ...config files
 	
 Order of Implementation:
 	1. Actual: Create employees and calculate burn rate + headcount info 
