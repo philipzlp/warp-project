@@ -1,7 +1,6 @@
 # Headcount and Runway Planner
 
 Note: This README shows setup directions and an overview of my project. See @Design Notes.txt for my design decisions. 
-A React + Vite application for modeling startup headcount growth versus cash runway.
 
 ## Features
 
