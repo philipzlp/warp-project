@@ -68,10 +68,11 @@ function App() {
     return null
   }
   
-  // Initialize selectedView to 'custom' if we have a URL scenario, otherwise 'seed'
+  // Initialize selectedView to 'custom' (blank plan) by default, or use URL scenario if present
   const [selectedView, setSelectedView] = useState(() => {
     const urlScenario = loadScenarioFromURL()
-    return urlScenario ? 'custom' : 'seed'
+    // Always start with 'custom' (blank plan) unless loading from URL
+    return urlScenario ? 'custom' : 'custom'
   })
   const [savedScenarios, setSavedScenarios] = useState(() => {
     // Load saved scenarios from localStorage on initial mount
